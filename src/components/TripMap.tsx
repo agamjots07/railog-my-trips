@@ -21,17 +21,22 @@ function FitBounds({ points }: { points: LatLng[] }) {
 export function TripMap({
   origin,
   destination,
+  path,
   mode = "train",
   height = 280,
 }: {
   origin?: LatLng | null;
   destination?: LatLng | null;
+  path?: LatLng[] | null;
   mode?: "train" | "ferry";
   height?: number;
 }) {
-  const points = [origin, destination].filter(Boolean) as LatLng[];
-  const center: LatLng = points[0] ?? [40, 0];
+  const stops = [origin, destination].filter(Boolean) as LatLng[];
+  const routeLine = (path && path.length >= 2 ? path : null);
+  const fitPoints: LatLng[] = routeLine ?? stops;
+  const center: LatLng = fitPoints[0] ?? [40, 0];
   const color = mode === "ferry" ? "oklch(0.72 0.15 230)" : "oklch(0.78 0.16 155)";
+  const isStraight = !routeLine && stops.length === 2;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border" style={{ height }}>
@@ -46,10 +51,19 @@ export function TripMap({
           attribution='&copy; OpenStreetMap &copy; CARTO'
           subdomains="abcd"
         />
-        {points.length === 2 && (
-          <Polyline positions={points} pathOptions={{ color, weight: 4, opacity: 0.9, dashArray: mode === "ferry" ? "8 6" : undefined }} />
+        {routeLine && (
+          <Polyline
+            positions={routeLine}
+            pathOptions={{ color, weight: 4, opacity: 0.95, dashArray: mode === "ferry" ? "8 6" : undefined }}
+          />
         )}
-        {points.map((p, i) => (
+        {isStraight && (
+          <Polyline
+            positions={stops}
+            pathOptions={{ color, weight: 3, opacity: 0.5, dashArray: "4 6" }}
+          />
+        )}
+        {stops.map((p, i) => (
           <CircleMarker
             key={i}
             center={p}
@@ -57,7 +71,7 @@ export function TripMap({
             pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
           />
         ))}
-        <FitBounds points={points} />
+        <FitBounds points={fitPoints} />
       </MapContainer>
     </div>
   );
