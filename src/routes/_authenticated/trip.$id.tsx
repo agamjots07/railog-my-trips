@@ -41,6 +41,11 @@ function TripDetail() {
   const Icon = trip.mode === "ferry" ? Ship : Train;
   const origin = trip.origin_lat != null && trip.origin_lng != null ? [trip.origin_lat, trip.origin_lng] as [number, number] : null;
   const destination = trip.destination_lat != null && trip.destination_lng != null ? [trip.destination_lat, trip.destination_lng] as [number, number] : null;
+  const path = Array.isArray(trip.route_geometry)
+    ? (trip.route_geometry as unknown as [number, number][]).filter(
+        (p) => Array.isArray(p) && p.length === 2 && typeof p[0] === "number" && typeof p[1] === "number",
+      )
+    : null;
 
   const endLive = async () => {
     const { error } = await supabase.from("trips").update({ end_time: new Date().toISOString(), is_live: false }).eq("id", trip.id);
@@ -81,7 +86,7 @@ function TripDetail() {
       <p className="mt-1 text-sm text-muted-foreground">{trip.origin} → {trip.destination}</p>
 
       <div className="my-5">
-        <TripMap origin={origin} destination={destination} mode={trip.mode} height={300} />
+        <TripMap origin={origin} destination={destination} path={path} mode={trip.mode} height={300} />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
