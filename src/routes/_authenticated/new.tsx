@@ -3,7 +3,9 @@ import { useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
-import { geocode, haversineKm } from "@/lib/geo";
+import { haversineKm } from "@/lib/geo";
+import { fetchRouteGeometry, type StationHit } from "@/lib/overpass";
+import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/new")({
@@ -17,7 +19,9 @@ function NewTrip() {
   const [mode, setMode] = useState<"train" | "ferry">("train");
   const [logType, setLogType] = useState<"past" | "live">("past");
   const [origin, setOrigin] = useState("");
+  const [originStation, setOriginStation] = useState<StationHit | null>(null);
   const [destination, setDestination] = useState("");
+  const [destinationStation, setDestinationStation] = useState<StationHit | null>(null);
   const [routeName, setRouteName] = useState("");
   const today = new Date();
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -29,6 +33,15 @@ function NewTrip() {
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const handleOriginChange = (v: string) => {
+    setOrigin(v);
+    if (originStation && v !== originStation.name) setOriginStation(null);
+  };
+  const handleDestChange = (v: string) => {
+    setDestination(v);
+    if (destinationStation && v !== destinationStation.name) setDestinationStation(null);
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -37,8 +50,18 @@ function NewTrip() {
       const startISO = new Date(`${date}T${startTime}`).toISOString();
       const endISO = logType === "live" || !endTime ? null : new Date(`${date}T${endTime}`).toISOString();
 
-      const [o, d] = await Promise.all([geocode(origin), geocode(destination)]);
+      const o = originStation;
+      const d = destinationStation;
       const distance = o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
+
+      let geometry: [number, number][] | null = null;
+      if (o && d) {
+        try {
+          geometry = await fetchRouteGeometry(o, d, mode);
+        } catch {
+          geometry = null;
+        }
+      }
 
       const { data, error } = await supabase
         .from("trips")
@@ -54,6 +77,9 @@ function NewTrip() {
           origin_lng: o?.lng ?? null,
           destination_lat: d?.lat ?? null,
           destination_lng: d?.lng ?? null,
+          origin_osm_id: o ? `${o.osmType}/${o.osmId}` : null,
+          destination_osm_id: d ? `${d.osmType}/${d.osmId}` : null,
+          route_geometry: geometry,
           distance_km: distance,
           notes: notes || null,
           is_live: logType === "live",
@@ -61,7 +87,13 @@ function NewTrip() {
         .select("id")
         .single();
       if (error) throw error;
-      toast.success(logType === "live" ? "Trip started!" : "Trip logged");
+      toast.success(
+        logType === "live"
+          ? "Trip started!"
+          : geometry
+            ? "Trip logged with route from OpenStreetMap"
+            : "Trip logged",
+      );
       nav({ to: "/trip/$id", params: { id: data.id } });
     } catch (err) {
       toast.error((err as Error).message);
@@ -71,25 +103,27 @@ function NewTrip() {
   };
 
   return (
-    <div className="px-5 pt-6">
+    <div className="px-5 pt-6 pb-10">
       <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground">
         <ChevronLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Log a trip</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Capture a journey by train or ferry.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Stations sourced live from OpenStreetMap.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-5">
-        {/* Mode */}
         <Segmented
           value={mode}
-          onChange={(v) => setMode(v as "train" | "ferry")}
+          onChange={(v) => {
+            setMode(v as "train" | "ferry");
+            setOriginStation(null);
+            setDestinationStation(null);
+          }}
           options={[
             { value: "train", label: "Train", icon: Train },
             { value: "ferry", label: "Ferry", icon: Ship },
           ]}
         />
 
-        {/* Type */}
         <Segmented
           value={logType}
           onChange={(v) => setLogType(v as "past" | "live")}
@@ -100,10 +134,24 @@ function NewTrip() {
         />
 
         <Field label="Origin">
-          <input value={origin} onChange={(e) => setOrigin(e.target.value)} required placeholder="e.g. Zürich HB" className={inputCls} />
+          <StationAutocomplete
+            value={origin}
+            onChange={handleOriginChange}
+            onSelect={setOriginStation}
+            mode={mode}
+            placeholder={mode === "ferry" ? "e.g. Staten Island Ferry" : "e.g. Zürich HB"}
+            required
+          />
         </Field>
         <Field label="Destination">
-          <input value={destination} onChange={(e) => setDestination(e.target.value)} required placeholder="e.g. Milano Centrale" className={inputCls} />
+          <StationAutocomplete
+            value={destination}
+            onChange={handleDestChange}
+            onSelect={setDestinationStation}
+            mode={mode}
+            placeholder={mode === "ferry" ? "e.g. St. George Terminal" : "e.g. Milano Centrale"}
+            required
+          />
         </Field>
         <Field label="Route name (optional)">
           <input value={routeName} onChange={(e) => setRouteName(e.target.value)} placeholder="e.g. EC 13" className={inputCls} />
