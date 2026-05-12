@@ -1,0 +1,182 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
+import { geocode, haversineKm } from "@/lib/geo";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/_authenticated/new")({
+  head: () => ({ meta: [{ title: "Log a trip — Railog" }] }),
+  component: NewTrip,
+});
+
+function NewTrip() {
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const [mode, setMode] = useState<"train" | "ferry">("train");
+  const [logType, setLogType] = useState<"past" | "live">("past");
+  const [origin, setOrigin] = useState("");
+  const [destination, setDestination] = useState("");
+  const [routeName, setRouteName] = useState("");
+  const today = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  const nowStr = `${pad(today.getHours())}:${pad(today.getMinutes())}`;
+  const [date, setDate] = useState(todayStr);
+  const [startTime, setStartTime] = useState(nowStr);
+  const [endTime, setEndTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setBusy(true);
+    try {
+      const startISO = new Date(`${date}T${startTime}`).toISOString();
+      const endISO = logType === "live" || !endTime ? null : new Date(`${date}T${endTime}`).toISOString();
+
+      const [o, d] = await Promise.all([geocode(origin), geocode(destination)]);
+      const distance = o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
+
+      const { data, error } = await supabase
+        .from("trips")
+        .insert({
+          user_id: user.id,
+          mode,
+          origin,
+          destination,
+          route_name: routeName || null,
+          start_time: startISO,
+          end_time: endISO,
+          origin_lat: o?.lat ?? null,
+          origin_lng: o?.lng ?? null,
+          destination_lat: d?.lat ?? null,
+          destination_lng: d?.lng ?? null,
+          distance_km: distance,
+          notes: notes || null,
+          is_live: logType === "live",
+        })
+        .select("id")
+        .single();
+      if (error) throw error;
+      toast.success(logType === "live" ? "Trip started!" : "Trip logged");
+      nav({ to: "/trip/$id", params: { id: data.id } });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="px-5 pt-6">
+      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground">
+        <ChevronLeft className="h-4 w-4" /> Back
+      </Link>
+      <h1 className="text-3xl font-bold tracking-tight">Log a trip</h1>
+      <p className="mt-1 text-sm text-muted-foreground">Capture a journey by train or ferry.</p>
+
+      <form onSubmit={submit} className="mt-6 space-y-5">
+        {/* Mode */}
+        <Segmented
+          value={mode}
+          onChange={(v) => setMode(v as "train" | "ferry")}
+          options={[
+            { value: "train", label: "Train", icon: Train },
+            { value: "ferry", label: "Ferry", icon: Ship },
+          ]}
+        />
+
+        {/* Type */}
+        <Segmented
+          value={logType}
+          onChange={(v) => setLogType(v as "past" | "live")}
+          options={[
+            { value: "past", label: "Past trip" },
+            { value: "live", label: "Start live", icon: Radio },
+          ]}
+        />
+
+        <Field label="Origin">
+          <input value={origin} onChange={(e) => setOrigin(e.target.value)} required placeholder="e.g. Zürich HB" className={inputCls} />
+        </Field>
+        <Field label="Destination">
+          <input value={destination} onChange={(e) => setDestination(e.target.value)} required placeholder="e.g. Milano Centrale" className={inputCls} />
+        </Field>
+        <Field label="Route name (optional)">
+          <input value={routeName} onChange={(e) => setRouteName(e.target.value)} placeholder="e.g. EC 13" className={inputCls} />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Date">
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className={inputCls} />
+          </Field>
+          <Field label="Start">
+            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className={inputCls} />
+          </Field>
+        </div>
+
+        {logType === "past" && (
+          <Field label="End time (optional)">
+            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
+          </Field>
+        )}
+
+        <Field label="Notes (optional)">
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={`${inputCls} resize-none`} placeholder="Window seat, beautiful sunset…" />
+        </Field>
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {busy ? "Saving…" : logType === "live" ? "Start trip" : "Log trip"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+const inputCls = "w-full rounded-xl border border-input bg-input/50 px-4 py-3 text-sm outline-none focus:border-primary";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Segmented({
+  value, onChange, options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; icon?: React.ComponentType<{ className?: string }> }[];
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
+      {options.map((o) => {
+        const active = o.value === value;
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
+              active ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {Icon && <Icon className="h-4 w-4" />}
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
