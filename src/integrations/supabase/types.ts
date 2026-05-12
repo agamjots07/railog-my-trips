@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      trips: {
+        Row: {
+          created_at: string
+          destination: string
+          destination_lat: number | null
+          destination_lng: number | null
+          distance_km: number | null
+          end_time: string | null
+          id: string
+          is_live: boolean
+          mode: Database["public"]["Enums"]["transit_mode"]
+          notes: string | null
+          origin: string
+          origin_lat: number | null
+          origin_lng: number | null
+          route_name: string | null
+          start_time: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          destination_lat?: number | null
+          destination_lng?: number | null
+          distance_km?: number | null
+          end_time?: string | null
+          id?: string
+          is_live?: boolean
+          mode?: Database["public"]["Enums"]["transit_mode"]
+          notes?: string | null
+          origin: string
+          origin_lat?: number | null
+          origin_lng?: number | null
+          route_name?: string | null
+          start_time: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          destination_lat?: number | null
+          destination_lng?: number | null
+          distance_km?: number | null
+          end_time?: string | null
+          id?: string
+          is_live?: boolean
+          mode?: Database["public"]["Enums"]["transit_mode"]
+          notes?: string | null
+          origin?: string
+          origin_lat?: number | null
+          origin_lng?: number | null
+          route_name?: string | null
+          start_time?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +82,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      transit_mode: "train" | "ferry"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +209,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      transit_mode: ["train", "ferry"],
+    },
   },
 } as const
