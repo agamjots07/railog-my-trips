@@ -88,7 +88,7 @@ function Big({ label, value, unit, icon: Icon }: { label: string; value: string;
   );
 }
 
-function ModeBar({ icon: Icon, label, count, km, total, color }: { icon: React.ComponentType<{ className?: string }>; label: string; count: number; km: number; total: number; color: string }) {
+function ModeBar({ icon: Icon, label, count, km, total, color }: { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; label: string; count: number; km: number; total: number; color: string }) {
   const pct = total ? (count / total) * 100 : 0;
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
