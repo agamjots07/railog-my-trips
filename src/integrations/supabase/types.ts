@@ -20,6 +20,7 @@ export type Database = {
           destination: string
           destination_lat: number | null
           destination_lng: number | null
+          destination_osm_id: string | null
           distance_km: number | null
           end_time: string | null
           id: string
@@ -29,6 +30,8 @@ export type Database = {
           origin: string
           origin_lat: number | null
           origin_lng: number | null
+          origin_osm_id: string | null
+          route_geometry: Json | null
           route_name: string | null
           start_time: string
           updated_at: string
@@ -39,6 +42,7 @@ export type Database = {
           destination: string
           destination_lat?: number | null
           destination_lng?: number | null
+          destination_osm_id?: string | null
           distance_km?: number | null
           end_time?: string | null
           id?: string
@@ -48,6 +52,8 @@ export type Database = {
           origin: string
           origin_lat?: number | null
           origin_lng?: number | null
+          origin_osm_id?: string | null
+          route_geometry?: Json | null
           route_name?: string | null
           start_time: string
           updated_at?: string
@@ -58,6 +64,7 @@ export type Database = {
           destination?: string
           destination_lat?: number | null
           destination_lng?: number | null
+          destination_osm_id?: string | null
           distance_km?: number | null
           end_time?: string | null
           id?: string
@@ -67,6 +74,8 @@ export type Database = {
           origin?: string
           origin_lat?: number | null
           origin_lng?: number | null
+          origin_osm_id?: string | null
+          route_geometry?: Json | null
           route_name?: string | null
           start_time?: string
           updated_at?: string
