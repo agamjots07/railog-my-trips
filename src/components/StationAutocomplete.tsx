@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { searchStations, type StationHit } from "@/lib/overpass";
+import { searchStations, type StationHit } from "@/lib/transitland";
 import { MapPin, Loader2 } from "lucide-react";
 
 export function StationAutocomplete({
