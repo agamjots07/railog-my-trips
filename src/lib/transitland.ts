@@ -97,23 +97,39 @@ export async function fetchRouteGeometry(
   destination: StationHit,
   _mode: "train" | "ferry",
 ): Promise<LatLng[] | null> {
-  let json: any;
-  try {
-    json = await tlGet("routes", {
-      served_by_onestop_ids: `${origin.id},${destination.id}`,
-      include_geometry: "true",
-      limit: 5,
-    });
-  } catch {
-    return null;
-  }
-  const routes: any[] = json?.routes ?? [];
-  if (!routes.length) return null;
+  // Query routes for each stop separately, then intersect — Transitland's
+  // served_by_onestop_ids is OR, so combining in one call returns unrelated
+  // routes (e.g. a Brazilian ferry that shares one of the IDs by coincidence).
+  const fetchRoutesForStop = async (onestopId: string): Promise<any[]> => {
+    try {
+      const res = await tlGet("routes", {
+        served_by_onestop_ids: onestopId,
+        include_geometry: "true",
+        limit: 50,
+      });
+      return res?.routes ?? [];
+    } catch {
+      return [];
+    }
+  };
 
-  // Pick the route with the geometry segment that best covers both stops.
+  const [originRoutes, destRoutes] = await Promise.all([
+    fetchRoutesForStop(origin.id),
+    fetchRoutesForStop(destination.id),
+  ]);
+  if (!originRoutes.length || !destRoutes.length) return null;
+
+  const destIds = new Set(destRoutes.map((r) => r.onestop_id ?? r.id));
+  const shared = originRoutes.filter((r) => destIds.has(r.onestop_id ?? r.id));
+  if (!shared.length) return null;
+
+  // Reject any geometry whose closest points aren't actually near the stops.
+  // ~0.05° ≈ 5km — anything farther means the route doesn't really serve them.
+  const MAX_ENDPOINT_DIST_SQ = 0.05 * 0.05;
+
   let best: { coords: LatLng[]; score: number } | null = null;
 
-  for (const route of routes) {
+  for (const route of shared) {
     const geom = route.geometry;
     if (!geom) continue;
     const segments: LatLng[][] = [];
@@ -128,9 +144,10 @@ export async function fetchRouteGeometry(
       if (seg.length < 2) continue;
       const trimmed = trimBetween(seg, [origin.lat, origin.lng], [destination.lat, destination.lng]);
       if (trimmed.length < 2) continue;
-      // score: smaller combined squared distance from segment endpoints to stops
       const dStart = distSq(trimmed[0], [origin.lat, origin.lng]);
       const dEnd = distSq(trimmed[trimmed.length - 1], [destination.lat, destination.lng]);
+      // Sanity: both endpoints must be near the requested stops.
+      if (dStart > MAX_ENDPOINT_DIST_SQ || dEnd > MAX_ENDPOINT_DIST_SQ) continue;
       const score = dStart + dEnd;
       if (!best || score < best.score) best = { coords: trimmed, score };
     }
