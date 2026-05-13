@@ -108,7 +108,7 @@ function NewTrip() {
         <ChevronLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Log a trip</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Stations sourced live from OpenStreetMap.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Stations sourced live from Transitland.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-5">
         <Segmented
