@@ -91,7 +91,7 @@ function NewTrip() {
         logType === "live"
           ? "Trip started!"
           : geometry
-            ? "Trip logged with route from OpenStreetMap"
+            ? "Trip logged with route from Transitland"
             : "Trip logged",
       );
       nav({ to: "/trip/$id", params: { id: data.id } });
