@@ -90,7 +90,7 @@ export function StationAutocomplete({
       {open && results.length > 0 && (
         <ul className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-border bg-popover shadow-xl">
           {results.map((r, i) => (
-            <li key={`${r.osmType}-${r.osmId}`}>
+            <li key={r.id}>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
