@@ -88,21 +88,19 @@ export async function searchStations(
 }
 
 /**
- * Fetch route geometry between two stops. Tries Transitland first (real GTFS
- * shapes), then falls back to OpenStreetMap route relations via Overpass so
- * we draw the actual track/ferry path instead of a straight line.
+ * Fetch route geometry between two stops. Primary source is Overpass
+ * (OpenStreetMap) — we look up route relations that contain a station near
+ * each stop and use their actual track/way coordinates. Transitland GTFS
+ * shapes are used as a fallback only when OSM has no matching relation.
  */
 export async function fetchRouteGeometry(
   origin: StationHit,
   destination: StationHit,
   mode: "train" | "ferry",
 ): Promise<LatLng[] | null> {
-  const fromTransitland = await fetchTransitlandGeometry(origin, destination);
-  if (fromTransitland) return fromTransitland;
-
-  // Fall back to Overpass (OSM) — find a route relation that passes near
-  // both stops and concatenate its way geometries.
-  return fetchOsmRouteGeometry(origin, destination, mode);
+  const fromOsm = await fetchOsmRouteGeometry(origin, destination, mode);
+  if (fromOsm) return fromOsm;
+  return fetchTransitlandGeometry(origin, destination);
 }
 
 async function fetchTransitlandGeometry(
