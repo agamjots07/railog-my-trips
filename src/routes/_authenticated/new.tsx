@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
 import { haversineKm } from "@/lib/geo";
-import { fetchRouteGeometry, type StationHit } from "@/lib/overpass";
+import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { toast } from "sonner";
 
