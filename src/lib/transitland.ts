@@ -88,18 +88,27 @@ export async function searchStations(
 }
 
 /**
- * Fetch route geometry between two stops by finding a route that serves both
- * stations and using its shape, trimmed to the segment between the two stops.
- * Returns null when no shared route is found.
+ * Fetch route geometry between two stops. Tries Transitland first (real GTFS
+ * shapes), then falls back to OpenStreetMap route relations via Overpass so
+ * we draw the actual track/ferry path instead of a straight line.
  */
 export async function fetchRouteGeometry(
   origin: StationHit,
   destination: StationHit,
-  _mode: "train" | "ferry",
+  mode: "train" | "ferry",
 ): Promise<LatLng[] | null> {
-  // Query routes for each stop separately, then intersect — Transitland's
-  // served_by_onestop_ids is OR, so combining in one call returns unrelated
-  // routes (e.g. a Brazilian ferry that shares one of the IDs by coincidence).
+  const fromTransitland = await fetchTransitlandGeometry(origin, destination);
+  if (fromTransitland) return fromTransitland;
+
+  // Fall back to Overpass (OSM) — find a route relation that passes near
+  // both stops and concatenate its way geometries.
+  return fetchOsmRouteGeometry(origin, destination, mode);
+}
+
+async function fetchTransitlandGeometry(
+  origin: StationHit,
+  destination: StationHit,
+): Promise<LatLng[] | null> {
   const fetchRoutesForStop = async (onestopId: string): Promise<any[]> => {
     try {
       const res = await tlGet("routes", {
@@ -123,10 +132,9 @@ export async function fetchRouteGeometry(
   const shared = originRoutes.filter((r) => destIds.has(r.onestop_id ?? r.id));
   if (!shared.length) return null;
 
-  // Reject any geometry whose closest points aren't actually near the stops.
-  // ~0.05° ≈ 5km — anything farther means the route doesn't really serve them.
+  // ~0.05° ≈ 5km. Each station should be within a few hundred meters of the
+  // route shape; anything further means the route doesn't really serve them.
   const MAX_ENDPOINT_DIST_SQ = 0.05 * 0.05;
-
   let best: { coords: LatLng[]; score: number } | null = null;
 
   for (const route of shared) {
@@ -146,7 +154,6 @@ export async function fetchRouteGeometry(
       if (trimmed.length < 2) continue;
       const dStart = distSq(trimmed[0], [origin.lat, origin.lng]);
       const dEnd = distSq(trimmed[trimmed.length - 1], [destination.lat, destination.lng]);
-      // Sanity: both endpoints must be near the requested stops.
       if (dStart > MAX_ENDPOINT_DIST_SQ || dEnd > MAX_ENDPOINT_DIST_SQ) continue;
       const score = dStart + dEnd;
       if (!best || score < best.score) best = { coords: trimmed, score };
@@ -154,6 +161,62 @@ export async function fetchRouteGeometry(
   }
 
   return best?.coords ?? null;
+}
+
+/**
+ * Overpass fallback: find an OSM route relation (train/subway/light_rail/
+ * tram/monorail/ferry) that contains a station node near each of the two
+ * stops, then concatenate the way-member geometries and trim.
+ */
+async function fetchOsmRouteGeometry(
+  origin: StationHit,
+  destination: StationHit,
+  mode: "train" | "ferry",
+): Promise<LatLng[] | null> {
+  const routeFilter =
+    mode === "ferry"
+      ? `["route"="ferry"]`
+      : `["route"~"^(train|subway|light_rail|tram|monorail|railway)$"]`;
+  const stationFilter =
+    mode === "ferry"
+      ? `["amenity"="ferry_terminal"]`
+      : `["railway"~"^(station|halt|stop)$"]`;
+  // Search ~400m around the Transitland stop coordinate for an OSM station,
+  // then ask for route relations containing both. (around:radius,lat,lng)
+  const radius = 400;
+  const ql = `[out:json][timeout:30];
+    (node${stationFilter}(around:${radius},${origin.lat},${origin.lng});)->.a;
+    (node${stationFilter}(around:${radius},${destination.lat},${destination.lng});)->.b;
+    rel(bn.a)(bn.b)${routeFilter};
+    out geom;`;
+  let json: any;
+  try {
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "data=" + encodeURIComponent(ql),
+    });
+    if (!res.ok) return null;
+    json = await res.json();
+  } catch {
+    return null;
+  }
+  const rel = (json?.elements ?? [])[0];
+  if (!rel) return null;
+
+  const coords: LatLng[] = [];
+  for (const m of rel.members ?? []) {
+    if (m.type !== "way" || !Array.isArray(m.geometry)) continue;
+    for (const g of m.geometry) {
+      const last = coords[coords.length - 1];
+      if (!last || last[0] !== g.lat || last[1] !== g.lon) {
+        coords.push([g.lat, g.lon]);
+      }
+    }
+  }
+  if (coords.length < 2) return null;
+  const trimmed = trimBetween(coords, [origin.lat, origin.lng], [destination.lat, destination.lng]);
+  return trimmed.length >= 2 ? trimmed : coords;
 }
 
 function distSq(a: LatLng, b: LatLng) {
