@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
 import { haversineKm } from "@/lib/geo";
-import { fetchRouteGeometry, type StationHit } from "@/lib/overpass";
+import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { toast } from "sonner";
 
@@ -77,8 +77,8 @@ function NewTrip() {
           origin_lng: o?.lng ?? null,
           destination_lat: d?.lat ?? null,
           destination_lng: d?.lng ?? null,
-          origin_osm_id: o ? `${o.osmType}/${o.osmId}` : null,
-          destination_osm_id: d ? `${d.osmType}/${d.osmId}` : null,
+          origin_osm_id: o ? o.id : null,
+          destination_osm_id: d ? d.id : null,
           route_geometry: geometry,
           distance_km: distance,
           notes: notes || null,
@@ -91,7 +91,7 @@ function NewTrip() {
         logType === "live"
           ? "Trip started!"
           : geometry
-            ? "Trip logged with route from OpenStreetMap"
+            ? "Trip logged with route from Transitland"
             : "Trip logged",
       );
       nav({ to: "/trip/$id", params: { id: data.id } });
@@ -108,7 +108,7 @@ function NewTrip() {
         <ChevronLeft className="h-4 w-4" /> Back
       </Link>
       <h1 className="text-3xl font-bold tracking-tight">Log a trip</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Stations sourced live from OpenStreetMap.</p>
+      <p className="mt-1 text-sm text-muted-foreground">Stations sourced live from Transitland.</p>
 
       <form onSubmit={submit} className="mt-6 space-y-5">
         <Segmented
