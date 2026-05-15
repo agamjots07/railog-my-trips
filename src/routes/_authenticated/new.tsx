@@ -50,12 +50,13 @@ function NewTrip() {
       const startISO = new Date(`${date}T${startTime}`).toISOString();
       const endISO = logType === "live" || !endTime ? null : new Date(`${date}T${endTime}`).toISOString();
 
+      const isLive = logType === "live";
       const o = originStation;
       const d = destinationStation;
-      const distance = o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
+      const distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
 
       let geometry: [number, number][] | null = null;
-      if (o && d) {
+      if (!isLive && o && d) {
         try {
           geometry = await fetchRouteGeometry(o, d, mode);
         } catch {

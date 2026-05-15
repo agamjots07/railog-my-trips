@@ -129,7 +129,13 @@ function TripDetail() {
       <p className="mt-1 text-sm text-muted-foreground">{trip.origin} → {trip.destination}</p>
 
       <div className="my-5">
-        <TripMap origin={origin} destination={destination} path={path} mode={trip.mode} height={300} />
+        <TripMap
+          origin={isLive ? null : origin}
+          destination={isLive ? null : destination}
+          path={path}
+          mode={trip.mode}
+          height={300}
+        />
       </div>
 
       <div className="grid grid-cols-3 gap-3">
