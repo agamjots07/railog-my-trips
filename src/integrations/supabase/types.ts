@@ -14,6 +14,109 @@ export type Database = {
   }
   public: {
     Tables: {
+      gtfs_feeds: {
+        Row: {
+          agency_id: string
+          last_synced_at: string | null
+          name: string
+          shape_count: number
+          source_url: string
+          stop_count: number
+        }
+        Insert: {
+          agency_id: string
+          last_synced_at?: string | null
+          name: string
+          shape_count?: number
+          source_url: string
+          stop_count?: number
+        }
+        Update: {
+          agency_id?: string
+          last_synced_at?: string | null
+          name?: string
+          shape_count?: number
+          source_url?: string
+          stop_count?: number
+        }
+        Relationships: []
+      }
+      gtfs_shapes: {
+        Row: {
+          agency_id: string
+          bbox: number[]
+          geometry: Json
+          id: string
+          mode: string
+          shape_id: string
+        }
+        Insert: {
+          agency_id: string
+          bbox: number[]
+          geometry: Json
+          id: string
+          mode: string
+          shape_id: string
+        }
+        Update: {
+          agency_id?: string
+          bbox?: number[]
+          geometry?: Json
+          id?: string
+          mode?: string
+          shape_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtfs_shapes_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "gtfs_feeds"
+            referencedColumns: ["agency_id"]
+          },
+        ]
+      }
+      gtfs_stops: {
+        Row: {
+          agency_id: string
+          id: string
+          lat: number
+          lng: number
+          mode: string
+          name: string
+          parent_station: string | null
+          stop_id: string
+        }
+        Insert: {
+          agency_id: string
+          id: string
+          lat: number
+          lng: number
+          mode: string
+          name: string
+          parent_station?: string | null
+          stop_id: string
+        }
+        Update: {
+          agency_id?: string
+          id?: string
+          lat?: number
+          lng?: number
+          mode?: string
+          name?: string
+          parent_station?: string | null
+          stop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtfs_stops_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "gtfs_feeds"
+            referencedColumns: ["agency_id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           created_at: string
@@ -88,7 +191,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gtfs_shapes_near: {
+        Args: {
+          d_lat: number
+          d_lng: number
+          modes?: string[]
+          o_lat: number
+          o_lng: number
+          pad?: number
+        }
+        Returns: {
+          geometry: Json
+          id: string
+          mode: string
+        }[]
+      }
     }
     Enums: {
       transit_mode: "train" | "ferry"
