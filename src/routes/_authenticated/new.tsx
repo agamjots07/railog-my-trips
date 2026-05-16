@@ -92,7 +92,7 @@ function NewTrip() {
         logType === "live"
           ? "Trip started!"
           : geometry
-            ? "Trip logged with route from Transitland"
+            ? "Trip logged with real GTFS route shape"
             : "Trip logged",
       );
       nav({ to: "/trip/$id", params: { id: data.id } });
