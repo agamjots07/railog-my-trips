@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      gtfs_calendar: {
+        Row: {
+          agency_id: string
+          end_date: string
+          friday: boolean
+          monday: boolean
+          saturday: boolean
+          service_id: string
+          start_date: string
+          sunday: boolean
+          thursday: boolean
+          tuesday: boolean
+          wednesday: boolean
+        }
+        Insert: {
+          agency_id: string
+          end_date: string
+          friday?: boolean
+          monday?: boolean
+          saturday?: boolean
+          service_id: string
+          start_date: string
+          sunday?: boolean
+          thursday?: boolean
+          tuesday?: boolean
+          wednesday?: boolean
+        }
+        Update: {
+          agency_id?: string
+          end_date?: string
+          friday?: boolean
+          monday?: boolean
+          saturday?: boolean
+          service_id?: string
+          start_date?: string
+          sunday?: boolean
+          thursday?: boolean
+          tuesday?: boolean
+          wednesday?: boolean
+        }
+        Relationships: []
+      }
+      gtfs_calendar_dates: {
+        Row: {
+          agency_id: string
+          date: string
+          exception_type: number
+          service_id: string
+        }
+        Insert: {
+          agency_id: string
+          date: string
+          exception_type: number
+          service_id: string
+        }
+        Update: {
+          agency_id?: string
+          date?: string
+          exception_type?: number
+          service_id?: string
+        }
+        Relationships: []
+      }
       gtfs_feeds: {
         Row: {
           agency_id: string
@@ -38,6 +101,30 @@ export type Database = {
           shape_count?: number
           source_url?: string
           stop_count?: number
+        }
+        Relationships: []
+      }
+      gtfs_routes: {
+        Row: {
+          agency_id: string
+          long_name: string | null
+          route_id: string
+          route_type: number | null
+          short_name: string | null
+        }
+        Insert: {
+          agency_id: string
+          long_name?: string | null
+          route_id: string
+          route_type?: number | null
+          short_name?: string | null
+        }
+        Update: {
+          agency_id?: string
+          long_name?: string | null
+          route_id?: string
+          route_type?: number | null
+          short_name?: string | null
         }
         Relationships: []
       }
@@ -75,6 +162,33 @@ export type Database = {
             referencedColumns: ["agency_id"]
           },
         ]
+      }
+      gtfs_stop_times: {
+        Row: {
+          agency_id: string
+          arrival_seconds: number | null
+          departure_seconds: number | null
+          stop_id: string
+          stop_sequence: number
+          trip_id: string
+        }
+        Insert: {
+          agency_id: string
+          arrival_seconds?: number | null
+          departure_seconds?: number | null
+          stop_id: string
+          stop_sequence: number
+          trip_id: string
+        }
+        Update: {
+          agency_id?: string
+          arrival_seconds?: number | null
+          departure_seconds?: number | null
+          stop_id?: string
+          stop_sequence?: number
+          trip_id?: string
+        }
+        Relationships: []
       }
       gtfs_stops: {
         Row: {
@@ -116,6 +230,33 @@ export type Database = {
             referencedColumns: ["agency_id"]
           },
         ]
+      }
+      gtfs_trips: {
+        Row: {
+          agency_id: string
+          direction_id: number | null
+          route_id: string
+          service_id: string
+          trip_headsign: string | null
+          trip_id: string
+        }
+        Insert: {
+          agency_id: string
+          direction_id?: number | null
+          route_id: string
+          service_id: string
+          trip_headsign?: string | null
+          trip_id: string
+        }
+        Update: {
+          agency_id?: string
+          direction_id?: number | null
+          route_id?: string
+          service_id?: string
+          trip_headsign?: string | null
+          trip_id?: string
+        }
+        Relationships: []
       }
       trips: {
         Row: {
@@ -191,6 +332,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      gtfs_departures_between: {
+        Args: {
+          p_agency_id: string
+          p_date: string
+          p_destination_name: string
+          p_limit?: number
+          p_origin_name: string
+        }
+        Returns: {
+          arrival_seconds: number
+          departure_seconds: number
+          route_long_name: string
+          route_short_name: string
+          trip_headsign: string
+          trip_id: string
+        }[]
+      }
       gtfs_shapes_near: {
         Args: {
           d_lat: number
