@@ -191,7 +191,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gtfs_shapes_near: {
+        Args: {
+          d_lat: number
+          d_lng: number
+          modes?: string[]
+          o_lat: number
+          o_lng: number
+          pad?: number
+        }
+        Returns: {
+          geometry: Json
+          id: string
+          mode: string
+        }[]
+      }
     }
     Enums: {
       transit_mode: "train" | "ferry"
