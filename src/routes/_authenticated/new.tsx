@@ -140,7 +140,7 @@ function NewTrip() {
             onChange={handleOriginChange}
             onSelect={setOriginStation}
             mode={mode}
-            placeholder={mode === "ferry" ? "e.g. Staten Island Ferry" : "e.g. Zürich HB"}
+            placeholder={mode === "ferry" ? "e.g. Jack Layton Ferry Terminal" : "e.g. Union Station"}
             required
           />
         </Field>
@@ -150,7 +150,7 @@ function NewTrip() {
             onChange={handleDestChange}
             onSelect={setDestinationStation}
             mode={mode}
-            placeholder={mode === "ferry" ? "e.g. St. George Terminal" : "e.g. Milano Centrale"}
+            placeholder={mode === "ferry" ? "e.g. Centre Island" : "e.g. Bloor GO"}
             required
           />
         </Field>
