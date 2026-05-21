@@ -227,6 +227,29 @@ function NewTrip() {
           </Field>
         </div>
 
+        {bothGo && (
+          <Field label="Scheduled GO departure (optional)">
+            {depLoading ? (
+              <div className={`${inputCls} text-muted-foreground`}>Loading schedule…</div>
+            ) : departures.length === 0 ? (
+              <div className={`${inputCls} text-muted-foreground`}>No scheduled trips found for this date.</div>
+            ) : (
+              <select
+                value={selectedTripId}
+                onChange={(e) => pickDeparture(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Select a departure…</option>
+                {departures.map((d) => (
+                  <option key={d.trip_id} value={d.trip_id}>
+                    {fmtHM(d.departure_seconds)} → {fmtHM(d.arrival_seconds)} · {d.route_short_name ?? ""} {d.trip_headsign ? `· ${d.trip_headsign}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        )}
+
         {logType === "past" && (
           <Field label="End time (optional)">
             <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
