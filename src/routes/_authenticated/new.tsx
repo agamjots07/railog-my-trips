@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Train, Ship, ChevronLeft, Radio, Clock } from "lucide-react";
+import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
 import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
