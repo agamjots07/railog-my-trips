@@ -1,12 +1,27 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
+import { Train, Ship, ChevronLeft, Radio, Clock } from "lucide-react";
 import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { toast } from "sonner";
+
+type Departure = {
+  trip_id: string;
+  route_short_name: string | null;
+  route_long_name: string | null;
+  trip_headsign: string | null;
+  departure_seconds: number;
+  arrival_seconds: number;
+};
+
+const fmtHM = (s: number) => {
+  const h = Math.floor(s / 3600) % 24;
+  const m = Math.floor((s % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
 
 export const Route = createFileRoute("/_authenticated/new")({
   head: () => ({ meta: [{ title: "Log a trip — Railog" }] }),
