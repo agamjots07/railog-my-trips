@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Train, Ship, ChevronLeft, Radio } from "lucide-react";
@@ -7,6 +7,21 @@ import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { toast } from "sonner";
+
+type Departure = {
+  trip_id: string;
+  route_short_name: string | null;
+  route_long_name: string | null;
+  trip_headsign: string | null;
+  departure_seconds: number;
+  arrival_seconds: number;
+};
+
+const fmtHM = (s: number) => {
+  const h = Math.floor(s / 3600) % 24;
+  const m = Math.floor((s % 3600) / 60);
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+};
 
 export const Route = createFileRoute("/_authenticated/new")({
   head: () => ({ meta: [{ title: "Log a trip — Railog" }] }),
@@ -32,6 +47,51 @@ function NewTrip() {
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [departures, setDepartures] = useState<Departure[]>([]);
+  const [depLoading, setDepLoading] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<string>("");
+
+  // Both stations must be GO Transit for scheduled lookup (only GO schedules imported).
+  const bothGo =
+    logType === "past" &&
+    mode === "train" &&
+    originStation?.id.startsWith("go:") &&
+    destinationStation?.id.startsWith("go:");
+
+  useEffect(() => {
+    if (!bothGo || !originStation || !destinationStation || !date) {
+      setDepartures([]);
+      setSelectedTripId("");
+      return;
+    }
+    let cancelled = false;
+    setDepLoading(true);
+    setSelectedTripId("");
+    (async () => {
+      const { data, error } = await supabase.rpc("gtfs_departures_between", {
+        p_agency_id: "go",
+        p_origin_name: originStation.name,
+        p_destination_name: destinationStation.name,
+        p_date: date,
+        p_limit: 50,
+      });
+      if (cancelled) return;
+      setDepartures(error || !data ? [] : (data as Departure[]));
+      setDepLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bothGo, originStation, destinationStation, date]);
+
+  const pickDeparture = (tripId: string) => {
+    setSelectedTripId(tripId);
+    const dep = departures.find((d) => d.trip_id === tripId);
+    if (!dep) return;
+    setStartTime(fmtHM(dep.departure_seconds));
+    setEndTime(fmtHM(dep.arrival_seconds));
+    if (dep.route_short_name) setRouteName(dep.route_short_name);
+  };
 
   const handleOriginChange = (v: string) => {
     setOrigin(v);
@@ -166,6 +226,29 @@ function NewTrip() {
             <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className={inputCls} />
           </Field>
         </div>
+
+        {bothGo && (
+          <Field label="Scheduled GO departure (optional)">
+            {depLoading ? (
+              <div className={`${inputCls} text-muted-foreground`}>Loading schedule…</div>
+            ) : departures.length === 0 ? (
+              <div className={`${inputCls} text-muted-foreground`}>No scheduled trips found for this date.</div>
+            ) : (
+              <select
+                value={selectedTripId}
+                onChange={(e) => pickDeparture(e.target.value)}
+                className={inputCls}
+              >
+                <option value="">Select a departure…</option>
+                {departures.map((d) => (
+                  <option key={d.trip_id} value={d.trip_id}>
+                    {fmtHM(d.departure_seconds)} → {fmtHM(d.arrival_seconds)} · {d.route_short_name ?? ""} {d.trip_headsign ? `· ${d.trip_headsign}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </Field>
+        )}
 
         {logType === "past" && (
           <Field label="End time (optional)">
