@@ -47,6 +47,51 @@ function NewTrip() {
   const [endTime, setEndTime] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [departures, setDepartures] = useState<Departure[]>([]);
+  const [depLoading, setDepLoading] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState<string>("");
+
+  // Both stations must be GO Transit for scheduled lookup (only GO schedules imported).
+  const bothGo =
+    logType === "past" &&
+    mode === "train" &&
+    originStation?.id.startsWith("go:") &&
+    destinationStation?.id.startsWith("go:");
+
+  useEffect(() => {
+    if (!bothGo || !originStation || !destinationStation || !date) {
+      setDepartures([]);
+      setSelectedTripId("");
+      return;
+    }
+    let cancelled = false;
+    setDepLoading(true);
+    setSelectedTripId("");
+    (async () => {
+      const { data, error } = await supabase.rpc("gtfs_departures_between", {
+        p_agency_id: "go",
+        p_origin_name: originStation.name,
+        p_destination_name: destinationStation.name,
+        p_date: date,
+        p_limit: 50,
+      });
+      if (cancelled) return;
+      setDepartures(error || !data ? [] : (data as Departure[]));
+      setDepLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bothGo, originStation, destinationStation, date]);
+
+  const pickDeparture = (tripId: string) => {
+    setSelectedTripId(tripId);
+    const dep = departures.find((d) => d.trip_id === tripId);
+    if (!dep) return;
+    setStartTime(fmtHM(dep.departure_seconds));
+    setEndTime(fmtHM(dep.arrival_seconds));
+    if (dep.route_short_name) setRouteName(dep.route_short_name);
+  };
 
   const handleOriginChange = (v: string) => {
     setOrigin(v);
