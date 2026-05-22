@@ -375,7 +375,7 @@ function Segmented({
 }: {
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string; icon?: React.ComponentType<{ className?: string }> }[];
+  options: { value: string; label: string; icon?: React.ComponentType<React.SVGProps<SVGSVGElement>> }[];
 }) {
   return (
     <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
