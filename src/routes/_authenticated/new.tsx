@@ -51,7 +51,6 @@ function NewTrip() {
   const [depLoading, setDepLoading] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
 
-  // Both stations must be GO Transit for scheduled lookup (only GO schedules imported).
   const bothGo =
     logType === "past" &&
     mode === "train" &&
@@ -164,14 +163,24 @@ function NewTrip() {
   };
 
   return (
-    <div className="px-5 pt-6 pb-10">
-      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <ChevronLeft className="h-4 w-4" /> Back
-      </Link>
-      <h1 className="text-3xl font-bold tracking-tight">Log a trip</h1>
-      <p className="mt-1 text-sm text-muted-foreground">Real GO Transit & TTC stations from GTFS.</p>
+    <div className="relative px-5 pt-6 pb-10">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 -z-10"
+        style={{ background: "var(--gradient-hero)" }}
+      />
 
-      <form onSubmit={submit} className="mt-6 space-y-5">
+      <Link
+        to="/"
+        className="mb-6 inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-card/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" /> Back
+      </Link>
+      <h1 className="text-[34px] font-bold leading-[1.05] tracking-tight">Log a trip</h1>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        Real GO Transit &amp; TTC stations from GTFS.
+      </p>
+
+      <form onSubmit={submit} className="mt-7 space-y-4">
         <Segmented
           value={mode}
           onChange={(v) => {
@@ -194,104 +203,182 @@ function NewTrip() {
           ]}
         />
 
-        <Field label="Origin">
-          <StationAutocomplete
-            value={origin}
-            onChange={handleOriginChange}
-            onSelect={setOriginStation}
-            mode={mode}
-            placeholder={mode === "ferry" ? "e.g. Jack Layton Ferry Terminal" : "e.g. Union Station"}
-            required
-          />
-        </Field>
-        <Field label="Destination">
-          <StationAutocomplete
-            value={destination}
-            onChange={handleDestChange}
-            onSelect={setDestinationStation}
-            mode={mode}
-            placeholder={mode === "ferry" ? "e.g. Centre Island" : "e.g. Bloor GO"}
-            required
-          />
-        </Field>
-        <Field label="Route name (optional)">
-          <input value={routeName} onChange={(e) => setRouteName(e.target.value)} placeholder="e.g. EC 13" className={inputCls} />
-        </Field>
-
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Date">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required className={inputCls} />
+        <SectionCard>
+          <Field label="Origin">
+            <StationAutocomplete
+              value={origin}
+              onChange={handleOriginChange}
+              onSelect={setOriginStation}
+              mode={mode}
+              placeholder={mode === "ferry" ? "e.g. Jack Layton Ferry Terminal" : "e.g. Union Station"}
+              required
+            />
           </Field>
-          <Field label="Start">
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className={inputCls} />
+          <Divider />
+          <Field label="Destination">
+            <StationAutocomplete
+              value={destination}
+              onChange={handleDestChange}
+              onSelect={setDestinationStation}
+              mode={mode}
+              placeholder={mode === "ferry" ? "e.g. Centre Island" : "e.g. Bloor GO"}
+              required
+            />
           </Field>
-        </div>
+          <Divider />
+          <Field label="Route name (optional)">
+            <input
+              value={routeName}
+              onChange={(e) => setRouteName(e.target.value)}
+              placeholder="e.g. EC 13"
+              className={inputCls}
+            />
+          </Field>
+        </SectionCard>
 
-        {bothGo && (
-          <Field label="Scheduled GO departure (optional)">
-            {depLoading ? (
-              <div className={`${inputCls} text-muted-foreground`}>Loading schedule…</div>
-            ) : departures.length === 0 ? (
-              <div className={`${inputCls} text-muted-foreground`}>No scheduled trips found for this date.</div>
-            ) : (
-              <select
-                value={selectedTripId}
-                onChange={(e) => pickDeparture(e.target.value)}
+        <SectionCard>
+          <div className="grid grid-cols-2 gap-0">
+            <Field label="Date" className="border-r border-white/[0.05] pr-4">
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
                 className={inputCls}
-              >
-                <option value="">Select a departure…</option>
-                {departures.map((d) => (
-                  <option key={d.trip_id} value={d.trip_id}>
-                    {fmtHM(d.departure_seconds)} → {fmtHM(d.arrival_seconds)} · {d.route_short_name ?? ""} {d.trip_headsign ? `· ${d.trip_headsign}` : ""}
-                  </option>
-                ))}
-              </select>
-            )}
-          </Field>
-        )}
+              />
+            </Field>
+            <Field label="Start" className="pl-4">
+              <input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+                className={inputCls}
+              />
+            </Field>
+          </div>
 
-        {logType === "past" && (
-          <Field label="End time (optional)">
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className={inputCls} />
-          </Field>
-        )}
+          {bothGo && (
+            <>
+              <Divider />
+              <Field label="Scheduled GO departure">
+                {depLoading ? (
+                  <div className="text-[15px] text-muted-foreground">Loading schedule…</div>
+                ) : departures.length === 0 ? (
+                  <div className="text-[15px] text-muted-foreground">
+                    No scheduled trips found for this date.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedTripId}
+                    onChange={(e) => pickDeparture(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">Select a departure…</option>
+                    {departures.map((d) => (
+                      <option key={d.trip_id} value={d.trip_id}>
+                        {fmtHM(d.departure_seconds)} → {fmtHM(d.arrival_seconds)}
+                        {d.route_short_name ? ` · ${d.route_short_name}` : ""}
+                        {d.trip_headsign ? ` · ${d.trip_headsign}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </Field>
+            </>
+          )}
 
-        <Field label="Notes (optional)">
-          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className={`${inputCls} resize-none`} placeholder="Window seat, beautiful sunset…" />
-        </Field>
+          {logType === "past" && (
+            <>
+              <Divider />
+              <Field label="End time (optional)">
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className={inputCls}
+                />
+              </Field>
+            </>
+          )}
+        </SectionCard>
+
+        <SectionCard>
+          <Field label="Notes (optional)">
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className={`${inputCls} resize-none`}
+              placeholder="Window seat, beautiful sunset…"
+            />
+          </Field>
+        </SectionCard>
 
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-2xl bg-primary py-4 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition active:scale-[0.98] disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+          style={{
+            background: "var(--gradient-primary)",
+            boxShadow: "var(--shadow-glow)",
+          }}
         >
-          {busy ? "Saving…" : logType === "live" ? "Start trip" : "Log trip"}
+          {busy ? "Saving…" : logType === "live" ? "Start live trip" : "Log trip"}
         </button>
       </form>
     </div>
   );
 }
 
-const inputCls = "w-full rounded-xl border border-input bg-input/50 px-4 py-3 text-sm outline-none focus:border-primary";
+const inputCls =
+  "w-full bg-transparent px-0 py-0.5 text-[15px] font-medium outline-none placeholder:text-muted-foreground/60";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function SectionCard({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</label>
+    <div
+      className="rounded-3xl border border-white/[0.06] bg-card p-5"
+      style={{ boxShadow: "var(--shadow-card)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function Divider() {
+  return <div className="my-4 h-px bg-white/[0.05]" />;
+}
+
+function Field({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+        {label}
+      </label>
       {children}
     </div>
   );
 }
 
 function Segmented({
-  value, onChange, options,
+  value,
+  onChange,
+  options,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string; icon?: React.ComponentType<{ className?: string }> }[];
 }) {
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-card p-1">
+    <div className="grid grid-cols-2 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
       {options.map((o) => {
         const active = o.value === value;
         const Icon = o.icon;
@@ -300,11 +387,13 @@ function Segmented({
             key={o.value}
             type="button"
             onClick={() => onChange(o.value)}
-            className={`flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition ${
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition ${
+              active
+                ? "bg-primary text-primary-foreground shadow-[0_4px_16px_-6px_oklch(0.82_0.18_152/0.5)]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {Icon && <Icon className="h-4 w-4" />}
+            {Icon && <Icon className="h-4 w-4" strokeWidth={2.5} />}
             {o.label}
           </button>
         );
