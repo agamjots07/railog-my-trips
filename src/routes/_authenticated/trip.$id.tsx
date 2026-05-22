@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, Train, Ship, StopCircle, Radio } from "lucide-react";
+import { ChevronLeft, Trash2, Train, Ship, StopCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 
@@ -62,6 +62,8 @@ function TripDetail() {
   }
 
   const Icon = trip.mode === "ferry" ? Ship : Train;
+  const isFerry = trip.mode === "ferry";
+  const gradient = isFerry ? "var(--gradient-ferry)" : "var(--gradient-primary)";
   const origin =
     trip.origin_lat != null && trip.origin_lng != null
       ? ([trip.origin_lat, trip.origin_lng] as LatLng)
@@ -101,34 +103,57 @@ function TripDetail() {
   };
 
   return (
-    <div className="px-5 pt-6">
-      <div className="mb-4 flex items-center justify-between">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-          <ChevronLeft className="h-4 w-4" /> Trips
+    <div className="relative px-5 pt-6 pb-10">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 -z-10"
+        style={{ background: "var(--gradient-hero)" }}
+      />
+
+      <div className="mb-5 flex items-center justify-between">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 rounded-full border border-white/[0.06] bg-card/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> Trips
         </Link>
-        <button onClick={remove} className="rounded-full p-2 text-muted-foreground hover:bg-card hover:text-destructive" aria-label="Delete">
+        <button
+          onClick={remove}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
+          aria-label="Delete"
+        >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
 
       <div className="mb-4 flex items-center gap-2">
-        <span className={`flex h-8 w-8 items-center justify-center rounded-lg bg-card ${trip.mode === "ferry" ? "text-[var(--ferry)]" : "text-primary"}`}>
+        <span
+          className="flex h-10 w-10 items-center justify-center rounded-2xl text-primary-foreground"
+          style={{ background: gradient }}
+        >
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </span>
-        <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{trip.mode}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          {trip.mode}
+        </span>
         {isLive && (
-          <span className="ml-auto flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
-            <Radio className="h-3 w-3 animate-pulse" /> {tracking ? "Recording" : "Starting…"}
+          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" />
+            {tracking ? "Recording" : "Starting…"}
           </span>
         )}
       </div>
 
-      <h1 className="text-2xl font-bold tracking-tight">
+      <h1 className="text-[26px] font-bold leading-tight tracking-tight">
         {trip.route_name || `${trip.origin} → ${trip.destination}`}
       </h1>
-      <p className="mt-1 text-sm text-muted-foreground">{trip.origin} → {trip.destination}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">
+        {trip.origin} → {trip.destination}
+      </p>
 
-      <div className="my-5">
+      <div
+        className="my-6 overflow-hidden rounded-3xl border border-white/[0.06]"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
         <TripMap
           origin={isLive ? null : origin}
           destination={isLive ? null : destination}
@@ -138,36 +163,50 @@ function TripDetail() {
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div
+        className="grid grid-cols-3 overflow-hidden rounded-3xl border border-white/[0.06] bg-card"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
         <Stat label="Date" value={fmtDate(trip.start_time)} />
         <Stat
           label="Duration"
           value={isLive ? fmtDuration(trip.start_time, new Date().toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
+          bordered
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
       {isLive && (
-        <button onClick={endLive} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-semibold text-destructive-foreground transition active:scale-[0.98]">
+        <button
+          onClick={endLive}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-bold text-destructive-foreground shadow-[0_10px_30px_-10px_oklch(0.64_0.22_24/0.5)] transition active:scale-[0.98]"
+        >
           <StopCircle className="h-5 w-5" /> End trip now
         </button>
       )}
 
       {trip.notes && (
-        <div className="mt-5 rounded-2xl border border-border bg-card p-4">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</p>
-          <p className="text-sm whitespace-pre-wrap">{trip.notes}</p>
+        <div
+          className="mt-5 rounded-3xl border border-white/[0.06] bg-card p-5"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            Notes
+          </p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{trip.notes}</p>
         </div>
       )}
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, bordered }: { label: string; value: string; bordered?: boolean }) {
   return (
-    <div className="rounded-2xl border border-border bg-card p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-1 font-mono text-base font-semibold">{value}</p>
+    <div className={`px-4 py-4 ${bordered ? "border-x border-white/[0.05]" : ""}`}>
+      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1.5 font-mono text-base font-bold tabular-nums">{value}</p>
     </div>
   );
 }

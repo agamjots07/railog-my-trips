@@ -10,8 +10,9 @@ export function BottomNav() {
     { to: "/stats", icon: BarChart3, label: "Stats" },
   ];
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/90 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-md items-center justify-around px-4 py-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent" />
+      <div className="relative mx-auto flex max-w-sm items-center justify-around rounded-full border border-white/[0.06] bg-card/80 px-3 py-2 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.5)] backdrop-blur-xl">
         {items.map((it) => {
           const active = loc.pathname === it.to;
           const Icon = it.icon;
@@ -20,10 +21,14 @@ export function BottomNav() {
               <Link
                 key={it.to}
                 to={it.to}
-                className="-mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-transform active:scale-95"
+                className="group relative -my-4 flex h-14 w-14 items-center justify-center rounded-full text-primary-foreground transition active:scale-95"
+                style={{
+                  background: "var(--gradient-primary)",
+                  boxShadow: "var(--shadow-glow)",
+                }}
                 aria-label={it.label}
               >
-                <Icon className="h-6 w-6" strokeWidth={2.5} />
+                <Icon className="h-6 w-6" strokeWidth={2.75} />
               </Link>
             );
           }
@@ -32,11 +37,11 @@ export function BottomNav() {
               key={it.to}
               to={it.to}
               className={cn(
-                "flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition-colors",
+                "flex min-w-[68px] flex-col items-center gap-0.5 rounded-xl px-3 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-5 w-5" strokeWidth={active ? 2.5 : 2} />
               {it.label}
             </Link>
           );
