@@ -263,10 +263,11 @@ function NewTrip() {
             </Field>
           </div>
 
-          {bothGo && (
+          {scheduleAgency && (
             <>
               <Divider />
-              <Field label="Scheduled GO departure">
+              <Field label="Scheduled departure">
+
                 {depLoading ? (
                   <div className="text-[15px] text-muted-foreground">Loading schedule…</div>
                 ) : departures.length === 0 ? (
