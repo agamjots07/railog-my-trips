@@ -150,3 +150,24 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   opacity: 0.6;
   cursor: pointer;
 }
+
+/* Dark popups on the journey map */
+.leaflet-popup-content-wrapper {
+  background: oklch(0.205 0.014 250) !important;
+  color: var(--color-foreground) !important;
+  border: 1px solid oklch(1 0 0 / 0.08) !important;
+  border-radius: 0.875rem !important;
+  box-shadow: 0 20px 50px -20px oklch(0 0 0 / 0.7) !important;
+}
+.leaflet-popup-content {
+  margin: 0.75rem 1rem !important;
+  font-family: var(--font-display) !important;
+}
+.leaflet-popup-tip {
+  background: oklch(0.205 0.014 250) !important;
+  border: 1px solid oklch(1 0 0 / 0.08) !important;
+}
+.leaflet-popup-close-button {
+  color: oklch(0.66 0.018 250) !important;
+  padding: 6px 8px 0 0 !important;
+}
