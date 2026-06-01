@@ -51,14 +51,19 @@ function NewTrip() {
   const [depLoading, setDepLoading] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
 
-  const bothGo =
-    logType === "past" &&
-    mode === "train" &&
-    originStation?.id.startsWith("go:") &&
-    destinationStation?.id.startsWith("go:");
+  // Agency that has schedules (both endpoints same agency, agency has GTFS schedule data).
+  const scheduleAgency = (() => {
+    if (logType !== "past") return null;
+    const oAgency = originStation?.id.split(":")[0];
+    const dAgency = destinationStation?.id.split(":")[0];
+    if (!oAgency || oAgency !== dAgency) return null;
+    // Agencies with stop_times loaded
+    if (["go", "tif", "bcf"].includes(oAgency)) return oAgency;
+    return null;
+  })();
 
   useEffect(() => {
-    if (!bothGo || !originStation || !destinationStation || !date) {
+    if (!scheduleAgency || !originStation || !destinationStation || !date) {
       setDepartures([]);
       setSelectedTripId("");
       return;
@@ -68,7 +73,7 @@ function NewTrip() {
     setSelectedTripId("");
     (async () => {
       const { data, error } = await supabase.rpc("gtfs_departures_between", {
-        p_agency_id: "go",
+        p_agency_id: scheduleAgency,
         p_origin_name: originStation.name,
         p_destination_name: destinationStation.name,
         p_date: date,
@@ -81,7 +86,7 @@ function NewTrip() {
     return () => {
       cancelled = true;
     };
-  }, [bothGo, originStation, destinationStation, date]);
+  }, [scheduleAgency, originStation, destinationStation, date]);
 
   const pickDeparture = (tripId: string) => {
     setSelectedTripId(tripId);
@@ -258,10 +263,11 @@ function NewTrip() {
             </Field>
           </div>
 
-          {bothGo && (
+          {scheduleAgency && (
             <>
               <Divider />
-              <Field label="Scheduled GO departure">
+              <Field label="Scheduled departure">
+
                 {depLoading ? (
                   <div className="text-[15px] text-muted-foreground">Loading schedule…</div>
                 ) : departures.length === 0 ? (

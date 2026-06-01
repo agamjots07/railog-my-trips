@@ -18,19 +18,24 @@ export type StationHit = {
 const AGENCY_LABEL: Record<string, string> = {
   go: "GO Transit",
   ttc: "TTC",
+  lvm: "Las Vegas Monorail",
+  vmr: "Valley Metro Rail",
+  tif: "Toronto Island Ferry",
+  bcf: "BC Ferries",
 };
 
 const MODE_KIND: Record<string, string> = {
   train: "Train station",
   subway: "Subway station",
-  tram: "Streetcar stop",
+  tram: "Light rail stop",
+  monorail: "Monorail station",
   ferry: "Ferry terminal",
   bus: "Bus stop",
 };
 
 // Which GTFS `mode` values should be returned for each UI mode.
 const MODE_FILTER: Record<"train" | "ferry", string[]> = {
-  train: ["train", "subway", "tram"],
+  train: ["train", "subway", "tram", "monorail"],
   ferry: ["ferry"],
 };
 
