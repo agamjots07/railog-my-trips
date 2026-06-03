@@ -280,6 +280,7 @@ export type Database = {
           start_time: string
           updated_at: string
           user_id: string
+          vehicle_id: string | null
         }
         Insert: {
           created_at?: string
@@ -302,6 +303,7 @@ export type Database = {
           start_time: string
           updated_at?: string
           user_id: string
+          vehicle_id?: string | null
         }
         Update: {
           created_at?: string
@@ -322,6 +324,48 @@ export type Database = {
           route_geometry?: Json | null
           route_name?: string | null
           start_time?: string
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicles: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          make: string | null
+          model: string | null
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          make?: string | null
+          model?: string | null
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          make?: string | null
+          model?: string | null
+          name?: string
           updated_at?: string
           user_id?: string
         }
@@ -366,7 +410,14 @@ export type Database = {
       }
     }
     Enums: {
-      transit_mode: "train" | "ferry"
+      transit_mode:
+        | "train"
+        | "ferry"
+        | "taxi"
+        | "jetski"
+        | "atv"
+        | "skateboard"
+        | "gondola"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -494,7 +545,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      transit_mode: ["train", "ferry"],
+      transit_mode: [
+        "train",
+        "ferry",
+        "taxi",
+        "jetski",
+        "atv",
+        "skateboard",
+        "gondola",
+      ],
     },
   },
 } as const
