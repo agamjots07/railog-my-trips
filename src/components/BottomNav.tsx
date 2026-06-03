@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Plus, BarChart3, Map } from "lucide-react";
+import { Home, Plus, BarChart3, Map, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function BottomNav() {
@@ -9,6 +9,7 @@ export function BottomNav() {
     { to: "/map", icon: Map, label: "Map" },
     { to: "/new", icon: Plus, label: "Log", primary: true },
     { to: "/stats", icon: BarChart3, label: "Stats" },
+    { to: "/settings", icon: Settings, label: "Settings" },
   ];
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-[1000] pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-3">
@@ -38,7 +39,7 @@ export function BottomNav() {
               key={it.to}
               to={it.to}
               className={cn(
-                "flex min-w-[60px] flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
+                "flex min-w-[52px] flex-col items-center gap-0.5 rounded-xl px-1.5 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
