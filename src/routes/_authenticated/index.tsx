@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, LogOut, Radio, ArrowRight, Sparkles } from "lucide-react";
+import { Train, LogOut, ArrowRight, Sparkles } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
+import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
@@ -108,8 +109,9 @@ function FeedPage() {
 }
 
 function TripCard({ trip }: { trip: Trip }) {
-  const isFerry = trip.mode === "ferry";
-  const Icon = isFerry ? Ship : Train;
+  const mode = trip.mode as TripMode;
+  const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
+  const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
   const live = trip.is_live && !trip.end_time;
 
   return (
@@ -121,14 +123,14 @@ function TripCard({ trip }: { trip: Trip }) {
     >
       {/* Mode accent glow */}
       <div
-        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-20 blur-3xl transition group-hover:opacity-30"
-        style={{ background: isFerry ? "var(--gradient-ferry)" : "var(--gradient-primary)" }}
+        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full opacity-25 blur-3xl transition group-hover:opacity-35"
+        style={{ background: color }}
       />
 
       <div className="relative flex items-start justify-between gap-3">
         <div
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-primary-foreground"
-          style={{ background: isFerry ? "var(--gradient-ferry)" : "var(--gradient-primary)" }}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
+          style={{ background: color, boxShadow: `0 8px 24px -8px ${color}80` }}
         >
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </div>
