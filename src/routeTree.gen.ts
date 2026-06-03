@@ -13,8 +13,10 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
+import { Route as AuthenticatedGarageRouteImport } from './routes/_authenticated/garage'
 import { Route as AuthenticatedTripIdRouteImport } from './routes/_authenticated/trip.$id'
 
 const LoginRoute = LoginRouteImport.update({
@@ -36,6 +38,11 @@ const AuthenticatedStatsRoute = AuthenticatedStatsRouteImport.update({
   path: '/stats',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -44,6 +51,11 @@ const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
   id: '/map',
   path: '/map',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedGarageRoute = AuthenticatedGarageRouteImport.update({
+  id: '/garage',
+  path: '/garage',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTripIdRoute = AuthenticatedTripIdRouteImport.update({
@@ -55,15 +67,19 @@ const AuthenticatedTripIdRoute = AuthenticatedTripIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
+  '/garage': typeof AuthenticatedGarageRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/trip/$id': typeof AuthenticatedTripIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
+  '/garage': typeof AuthenticatedGarageRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/': typeof AuthenticatedIndexRoute
   '/trip/$id': typeof AuthenticatedTripIdRoute
@@ -72,23 +88,43 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
+  '/_authenticated/garage': typeof AuthenticatedGarageRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/trip/$id': typeof AuthenticatedTripIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/map' | '/new' | '/stats' | '/trip/$id'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/garage'
+    | '/map'
+    | '/new'
+    | '/settings'
+    | '/stats'
+    | '/trip/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/map' | '/new' | '/stats' | '/' | '/trip/$id'
+  to:
+    | '/login'
+    | '/garage'
+    | '/map'
+    | '/new'
+    | '/settings'
+    | '/stats'
+    | '/'
+    | '/trip/$id'
   id:
     | '__root__'
     | '/_authenticated'
     | '/login'
+    | '/_authenticated/garage'
     | '/_authenticated/map'
     | '/_authenticated/new'
+    | '/_authenticated/settings'
     | '/_authenticated/stats'
     | '/_authenticated/'
     | '/_authenticated/trip/$id'
@@ -129,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStatsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/new': {
       id: '/_authenticated/new'
       path: '/new'
@@ -143,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMapRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/garage': {
+      id: '/_authenticated/garage'
+      path: '/garage'
+      fullPath: '/garage'
+      preLoaderRoute: typeof AuthenticatedGarageRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/trip/$id': {
       id: '/_authenticated/trip/$id'
       path: '/trip/$id'
@@ -154,16 +204,20 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedGarageRoute: typeof AuthenticatedGarageRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedTripIdRoute: typeof AuthenticatedTripIdRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedGarageRoute: AuthenticatedGarageRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedNewRoute: AuthenticatedNewRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedTripIdRoute: AuthenticatedTripIdRoute,

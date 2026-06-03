@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, Train, Ship, StopCircle } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
+import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
   head: () => ({ meta: [{ title: "Trip — Railog" }] }),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/trip/$id")({
 });
 
 type Trip = Tables<"trips">;
+type Vehicle = Tables<"vehicles">;
 type LatLng = [number, number];
 
 function parsePath(geom: Trip["route_geometry"]): LatLng[] {
@@ -28,6 +30,7 @@ function TripDetail() {
   const { id } = Route.useParams();
   const nav = useNavigate();
   const [trip, setTrip] = useState<Trip | null | undefined>(undefined);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
@@ -35,6 +38,19 @@ function TripDetail() {
       setTrip(data);
     });
   }, [id]);
+
+  useEffect(() => {
+    if (!trip?.vehicle_id) {
+      setVehicle(null);
+      return;
+    }
+    supabase
+      .from("vehicles")
+      .select("*")
+      .eq("id", trip.vehicle_id)
+      .maybeSingle()
+      .then(({ data }) => setVehicle(data ?? null));
+  }, [trip?.vehicle_id]);
 
   const isLive = !!trip?.is_live && !trip?.end_time;
   const initialPath = useMemo(() => (trip ? parsePath(trip.route_geometry) : []), [trip]);
@@ -61,9 +77,9 @@ function TripDetail() {
     );
   }
 
-  const Icon = trip.mode === "ferry" ? Ship : Train;
-  const isFerry = trip.mode === "ferry";
-  const gradient = isFerry ? "var(--gradient-ferry)" : "var(--gradient-primary)";
+  const mode = trip.mode as TripMode;
+  const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
+  const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
   const origin =
     trip.origin_lat != null && trip.origin_lng != null
       ? ([trip.origin_lat, trip.origin_lng] as LatLng)
@@ -127,13 +143,13 @@ function TripDetail() {
 
       <div className="mb-4 flex items-center gap-2">
         <span
-          className="flex h-10 w-10 items-center justify-center rounded-2xl text-primary-foreground"
-          style={{ background: gradient }}
+          className="flex h-10 w-10 items-center justify-center rounded-2xl text-white"
+          style={{ background: color, boxShadow: `0 8px 24px -8px ${color}80` }}
         >
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </span>
         <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-          {trip.mode}
+          {MODE_LABEL[mode] ?? trip.mode}
         </span>
         {isLive && (
           <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
@@ -158,7 +174,7 @@ function TripDetail() {
           origin={isLive ? null : origin}
           destination={isLive ? null : destination}
           path={path}
-          mode={trip.mode}
+          mode={mode}
           height={300}
         />
       </div>
@@ -175,6 +191,26 @@ function TripDetail() {
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
+
+      {vehicle && (
+        <div
+          className="mt-5 flex items-center gap-3 rounded-3xl border border-white/[0.06] bg-card p-4"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <span
+            className="flex h-10 w-10 items-center justify-center rounded-2xl text-white"
+            style={{ background: vehicle.color || "#fb923c" }}
+          >
+            <CarIcon className="h-5 w-5" strokeWidth={2.5} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold">{vehicle.name}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {[vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Vehicle"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {isLive && (
         <button
