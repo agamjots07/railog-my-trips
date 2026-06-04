@@ -154,6 +154,7 @@ function JourneyMapPage() {
             maxZoom={19}
           />
         )}
+        {visible.map(({ trip, sub, path }) => (
           <Polyline
             key={trip.id}
             positions={path}
