@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
 import L from "leaflet";
 import { MODE_COLOR, type TripMode } from "@/lib/modes";
+import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 
 type LatLng = [number, number];
 
@@ -32,6 +33,7 @@ export function TripMap({
   mode?: TripMode;
   height?: number;
 }) {
+  const [style, setStyle] = useState<MapStyle>("satellite");
   const stops = [origin, destination].filter(Boolean) as LatLng[];
   const routeLine = path && path.length >= 2 ? path : null;
   const fitPoints: LatLng[] = routeLine ?? stops;
@@ -41,25 +43,34 @@ export function TripMap({
   const dashed = mode === "ferry" || mode === "jetski";
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border" style={{ height }}>
+    <div className="relative overflow-hidden rounded-2xl border border-border" style={{ height }}>
       <MapContainer
         center={center}
         zoom={4}
         scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
       >
-        {/* Esri World Imagery — satellite basemap, no API key */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics"
-          maxZoom={19}
-        />
-        {/* Labels overlay for context */}
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
-          opacity={0.85}
-        />
+        {style === "satellite" ? (
+          <>
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri — Source: Esri, Maxar, Earthstar Geographics"
+              maxZoom={19}
+            />
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              opacity={0.85}
+            />
+          </>
+        ) : (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+            attribution="&copy; OpenStreetMap &copy; CARTO"
+            maxZoom={19}
+          />
+        )}
         {routeLine && (
           <Polyline
             positions={routeLine}
@@ -89,6 +100,9 @@ export function TripMap({
         ))}
         <FitBounds points={fitPoints} />
       </MapContainer>
+      <div className="absolute right-2 top-2 z-[400]">
+        <MapStyleToggle value={style} onChange={setStyle} />
+      </div>
     </div>
   );
 }
