@@ -264,31 +264,19 @@ function NewTrip() {
         {/* Adventure subtype selector */}
         {category === "adventure" && (
           <SectionCard>
-            <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-              Activity
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {ADVENTURE_SUBTYPES.map((m) => {
-                const Icon = MODE_ICON[m];
-                const active = mode === m;
-                return (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => setMode(m)}
-                    className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-3 text-left text-sm font-bold transition ${
-                      active
-                        ? "border-transparent text-white shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]"
-                        : "border-white/[0.06] bg-card text-foreground hover:border-white/[0.12]"
-                    }`}
-                    style={active ? { background: MODE_COLOR[m] } : undefined}
-                  >
-                    <Icon className="h-4 w-4" strokeWidth={2.5} />
+            <Field label="Activity">
+              <select
+                value={mode}
+                onChange={(e) => setMode(e.target.value as TripMode)}
+                className={inputCls}
+              >
+                {ADVENTURE_SUBTYPES.map((m) => (
+                  <option key={m} value={m}>
                     {MODE_LABEL[m]}
-                  </button>
-                );
-              })}
-            </div>
+                  </option>
+                ))}
+              </select>
+            </Field>
           </SectionCard>
         )}
 
