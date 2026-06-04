@@ -133,18 +133,27 @@ function JourneyMapPage() {
         zoomControl={false}
         className="h-full w-full"
       >
-        {/* Esri satellite */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution="Tiles &copy; Esri"
-          maxZoom={19}
-        />
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
-          opacity={0.85}
-        />
-        {visible.map(({ trip, sub, path }) => (
+        {mapStyle === "satellite" ? (
+          <>
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri"
+              maxZoom={19}
+            />
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              opacity={0.85}
+            />
+          </>
+        ) : (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+            attribution="&copy; OpenStreetMap &copy; CARTO"
+            maxZoom={19}
+          />
+        )}
           <Polyline
             key={trip.id}
             positions={path}
