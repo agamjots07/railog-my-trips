@@ -28,7 +28,7 @@ export const MODE_ICON: Record<TripMode, LucideIcon> = {
   ferry: Ship,
   taxi: Car,
   jetski: Waves,
-  atv: Bike,
+  atv: Truck,
   skateboard: Zap,
   gondola: Mountain,
 };
