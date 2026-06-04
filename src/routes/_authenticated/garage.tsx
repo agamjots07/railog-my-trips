@@ -178,6 +178,7 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
   const [name, setName] = useState("");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
+  const [year, setYear] = useState<number | "">("");
   const [color, setColor] = useState(COLOR_SWATCHES[0]);
   const [busy, setBusy] = useState(false);
 
@@ -187,9 +188,10 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
     setBusy(true);
     const { error } = await supabase.from("vehicles").insert({
       user_id: user.id,
-      name,
+      name: name || [year, make, model].filter(Boolean).join(" ") || "My Vehicle",
       make: make || null,
       model: model || null,
+      year: year === "" ? null : year,
       color,
     });
     setBusy(false);
@@ -204,24 +206,50 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
       className="mt-6 space-y-4 rounded-3xl border border-white/[0.06] bg-card p-5"
       style={{ boxShadow: "var(--shadow-card)" }}
     >
-      <Field label="Name">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          placeholder="e.g. My Tesla"
-          className={inputCls}
+      <Field label="Make">
+        <Combobox
+          value={make}
+          onChange={(v) => {
+            setMake(v);
+            setModel("");
+          }}
+          options={CAR_MAKES.map((m) => m.name)}
+          placeholder="Search 40+ brands…"
         />
       </Field>
       <div className="my-4 h-px bg-white/[0.05]" />
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Make">
-          <input value={make} onChange={(e) => setMake(e.target.value)} placeholder="Tesla" className={inputCls} />
-        </Field>
         <Field label="Model">
-          <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Model 3" className={inputCls} />
+          <Combobox
+            value={model}
+            onChange={setModel}
+            options={CAR_MAKES.find((m) => m.name === make)?.models ?? []}
+            placeholder={make ? "Search models…" : "Pick make first"}
+            disabled={!make}
+          />
+        </Field>
+        <Field label="Year">
+          <select
+            value={year}
+            onChange={(e) => setYear(e.target.value ? Number(e.target.value) : "")}
+            className={inputCls}
+          >
+            <option value="">—</option>
+            {CAR_YEARS.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </Field>
       </div>
+      <div className="my-4 h-px bg-white/[0.05]" />
+      <Field label="Nickname (optional)">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder={[year, make, model].filter(Boolean).join(" ") || "e.g. My Tesla"}
+          className={inputCls}
+        />
+      </Field>
       <div className="my-4 h-px bg-white/[0.05]" />
       <Field label="Color">
         <div className="flex flex-wrap gap-2">
@@ -239,13 +267,122 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
       </Field>
       <button
         type="submit"
-        disabled={busy || !name}
+        disabled={busy}
         className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
         style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
       >
         {busy ? "Saving…" : "Add to garage"}
       </button>
     </form>
+  );
+}
+
+function Combobox({
+  value,
+  onChange,
+  options,
+  placeholder,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter((o) => o.toLowerCase().includes(q));
+  }, [options, query]);
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => {
+          setOpen((o) => !o);
+          setQuery("");
+        }}
+        className="flex w-full items-center justify-between gap-2 bg-transparent py-0.5 text-left text-[15px] font-medium outline-none disabled:opacity-50"
+      >
+        <span className={value ? "text-foreground" : "text-muted-foreground/60"}>
+          {value || placeholder || "Select…"}
+        </span>
+        {value ? (
+          <X
+            className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange("");
+            }}
+          />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        )}
+      </button>
+      {open && !disabled && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-white/[0.08] bg-card shadow-2xl">
+          <div className="flex items-center gap-2 border-b border-white/[0.05] px-3 py-2">
+            <Search className="h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search…"
+              className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+            />
+          </div>
+          <div className="max-h-60 overflow-y-auto py-1">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                No matches. You can also{" "}
+                <button
+                  type="button"
+                  className="font-semibold text-primary"
+                  onClick={() => {
+                    onChange(query);
+                    setOpen(false);
+                  }}
+                >
+                  use "{query}"
+                </button>
+              </div>
+            ) : (
+              filtered.map((o) => (
+                <button
+                  key={o}
+                  type="button"
+                  onClick={() => {
+                    onChange(o);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full items-center px-3 py-2 text-left text-sm transition hover:bg-white/[0.04] ${
+                    o === value ? "font-semibold text-primary" : "text-foreground"
+                  }`}
+                >
+                  {o}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
