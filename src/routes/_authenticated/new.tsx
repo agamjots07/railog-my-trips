@@ -11,7 +11,6 @@ import type { Tables } from "@/integrations/supabase/types";
 import {
   ADVENTURE_SUBTYPES,
   MODE_COLOR,
-  MODE_ICON,
   MODE_LABEL,
   isAdventure,
   isLiveOnly,
