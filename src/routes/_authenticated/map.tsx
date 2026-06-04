@@ -112,6 +112,7 @@ function JourneyMapPage() {
 
   const allPoints = useMemo(() => visible.flatMap((x) => x.path), [visible]);
 
+  // Show legend only on filtered tabs (hide on All — too cluttered).
   const legendModes: SubMode[] =
     tab === "water"
       ? ["ferry"]
@@ -121,7 +122,7 @@ function JourneyMapPage() {
           ? ["taxi"]
           : tab === "adventure"
             ? ["jetski", "atv", "skateboard", "gondola"]
-            : ["train", "lrt", "monorail", "ferry", "taxi", "jetski", "atv", "skateboard", "gondola"];
+            : [];
 
   return (
     <div className="fixed inset-0 bg-background">
