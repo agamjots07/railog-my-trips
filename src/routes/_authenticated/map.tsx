@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { fmtDate } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({ meta: [{ title: "Journey Map — Railog" }] }),
