@@ -137,7 +137,7 @@ function GaragePage() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[17px] font-bold leading-tight">{v.name}</p>
                   <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
-                    {[v.make, v.model].filter(Boolean).join(" ") || "—"}
+                    {[v.year, v.make, v.model].filter(Boolean).join(" ") || "—"}
                   </p>
                 </div>
                 <button
