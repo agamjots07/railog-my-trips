@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { ChevronLeft, Plus, Trash2, Car } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Car, Search, ChevronDown, X } from "lucide-react";
 import { toast } from "sonner";
+import { CAR_MAKES, CAR_YEARS } from "@/lib/carDatabase";
 
 export const Route = createFileRoute("/_authenticated/garage")({
   head: () => ({ meta: [{ title: "Garage — Railog" }] }),
