@@ -1,4 +1,4 @@
-import { Train, Ship, Car, Waves, Bike, Mountain, Zap, type LucideIcon } from "lucide-react";
+import { Train, Ship, Car, Waves, Truck, Mountain, Zap, type LucideIcon } from "lucide-react";
 
 export type TripMode =
   | "train"
@@ -28,7 +28,7 @@ export const MODE_ICON: Record<TripMode, LucideIcon> = {
   ferry: Ship,
   taxi: Car,
   jetski: Waves,
-  atv: Bike,
+  atv: Truck,
   skateboard: Zap,
   gondola: Mountain,
 };

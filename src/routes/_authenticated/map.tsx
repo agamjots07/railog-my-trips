@@ -7,6 +7,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { fmtDate } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({ meta: [{ title: "Journey Map — Railog" }] }),
@@ -84,6 +85,7 @@ const ADV_SET = new Set<SubMode>(["jetski", "atv", "skateboard", "gondola"]);
 function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [tab, setTab] = useState<Tab>("all");
+  const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
 
   useEffect(() => {
     supabase
@@ -110,6 +112,7 @@ function JourneyMapPage() {
 
   const allPoints = useMemo(() => visible.flatMap((x) => x.path), [visible]);
 
+  // Show legend only on filtered tabs (hide on All — too cluttered).
   const legendModes: SubMode[] =
     tab === "water"
       ? ["ferry"]
@@ -119,7 +122,7 @@ function JourneyMapPage() {
           ? ["taxi"]
           : tab === "adventure"
             ? ["jetski", "atv", "skateboard", "gondola"]
-            : ["train", "lrt", "monorail", "ferry", "taxi", "jetski", "atv", "skateboard", "gondola"];
+            : [];
 
   return (
     <div className="fixed inset-0 bg-background">
@@ -130,17 +133,27 @@ function JourneyMapPage() {
         zoomControl={false}
         className="h-full w-full"
       >
-        {/* Esri satellite */}
-        <TileLayer
-          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          attribution="Tiles &copy; Esri"
-          maxZoom={19}
-        />
-        <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-          subdomains="abcd"
-          opacity={0.85}
-        />
+        {mapStyle === "satellite" ? (
+          <>
+            <TileLayer
+              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              attribution="Tiles &copy; Esri"
+              maxZoom={19}
+            />
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              opacity={0.85}
+            />
+          </>
+        ) : (
+          <TileLayer
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            subdomains="abcd"
+            attribution="&copy; OpenStreetMap &copy; CARTO"
+            maxZoom={19}
+          />
+        )}
         {visible.map(({ trip, sub, path }) => (
           <Polyline
             key={trip.id}
@@ -202,23 +215,30 @@ function JourneyMapPage() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500]">
-        <div className="pointer-events-auto rounded-2xl border border-white/[0.06] bg-card/80 p-3 backdrop-blur-xl">
-          <div className="space-y-1.5">
-            {legendModes.map((m) => (
-              <div key={m} className="flex items-center gap-2">
-                <span
-                  className="h-2 w-4 rounded-full"
-                  style={{ background: SUB_COLORS[m], boxShadow: `0 0 8px ${SUB_COLORS[m]}80` }}
-                />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
-                  {SUB_LABELS[m]}
-                </span>
-              </div>
-            ))}
-          </div>
+      <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500] flex flex-col items-end gap-2">
+        <div className="pointer-events-auto">
+          <MapStyleToggle value={mapStyle} onChange={setMapStyle} />
         </div>
+        {legendModes.length > 0 && (
+          <div className="pointer-events-auto rounded-2xl border border-white/[0.06] bg-card/80 p-3 backdrop-blur-xl">
+            <div className="space-y-1.5">
+              {legendModes.map((m) => (
+                <div key={m} className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-4 rounded-full"
+                    style={{ background: SUB_COLORS[m], boxShadow: `0 0 8px ${SUB_COLORS[m]}80` }}
+                  />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
+                    {SUB_LABELS[m]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+
 
       {trips !== null && enriched.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-[400] flex items-center justify-center px-6">
