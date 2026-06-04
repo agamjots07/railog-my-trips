@@ -215,23 +215,30 @@ function JourneyMapPage() {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500]">
-        <div className="pointer-events-auto rounded-2xl border border-white/[0.06] bg-card/80 p-3 backdrop-blur-xl">
-          <div className="space-y-1.5">
-            {legendModes.map((m) => (
-              <div key={m} className="flex items-center gap-2">
-                <span
-                  className="h-2 w-4 rounded-full"
-                  style={{ background: SUB_COLORS[m], boxShadow: `0 0 8px ${SUB_COLORS[m]}80` }}
-                />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
-                  {SUB_LABELS[m]}
-                </span>
-              </div>
-            ))}
-          </div>
+      <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500] flex flex-col items-end gap-2">
+        <div className="pointer-events-auto">
+          <MapStyleToggle value={mapStyle} onChange={setMapStyle} />
         </div>
+        {legendModes.length > 0 && (
+          <div className="pointer-events-auto rounded-2xl border border-white/[0.06] bg-card/80 p-3 backdrop-blur-xl">
+            <div className="space-y-1.5">
+              {legendModes.map((m) => (
+                <div key={m} className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-4 rounded-full"
+                    style={{ background: SUB_COLORS[m], boxShadow: `0 0 8px ${SUB_COLORS[m]}80` }}
+                  />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground">
+                    {SUB_LABELS[m]}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+
 
       {trips !== null && enriched.length === 0 && (
         <div className="pointer-events-none absolute inset-0 z-[400] flex items-center justify-center px-6">
