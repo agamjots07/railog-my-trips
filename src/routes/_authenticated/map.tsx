@@ -85,6 +85,7 @@ const ADV_SET = new Set<SubMode>(["jetski", "atv", "skateboard", "gondola"]);
 function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [tab, setTab] = useState<Tab>("all");
+  const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
 
   useEffect(() => {
     supabase
