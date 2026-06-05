@@ -7,6 +7,8 @@ import { Train, LogOut, ArrowRight, Sparkles } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
+import { AchievementCelebration } from "@/components/AchievementCelebration";
+import { useAchievementQueue } from "@/lib/useAchievementQueue";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
@@ -37,8 +39,11 @@ function FeedPage() {
     return { count: trips.length, km };
   }, [trips]);
 
+  const { current: celebrating, dismiss } = useAchievementQueue(trips);
+
   return (
     <div className="relative px-5 pt-10">
+      <AchievementCelebration achievement={celebrating} onClose={dismiss} />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-72 -z-10"
         style={{ background: "var(--gradient-hero)" }}
