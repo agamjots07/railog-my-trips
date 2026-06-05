@@ -7,6 +7,8 @@ import { Train, LogOut, ArrowRight, Sparkles } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
+import { AchievementCelebration } from "@/components/AchievementCelebration";
+import { useAchievementQueue } from "@/lib/useAchievementQueue";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
