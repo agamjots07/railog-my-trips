@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { ShareTripCard } from "@/components/ShareTripCard";
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
   head: () => ({ meta: [{ title: "Trip — Railog" }] }),
@@ -31,6 +32,7 @@ function TripDetail() {
   const nav = useNavigate();
   const [trip, setTrip] = useState<Trip | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
@@ -132,13 +134,22 @@ function TripDetail() {
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Trips
         </Link>
-        <button
-          onClick={remove}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
-          aria-label="Delete"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSharing(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-primary"
+            aria-label="Share"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={remove}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
+            aria-label="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex items-center gap-2">
@@ -231,6 +242,10 @@ function TripDetail() {
           </p>
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{trip.notes}</p>
         </div>
+      )}
+
+      {sharing && (
+        <ShareTripCard trip={trip} path={path} onClose={() => setSharing(false)} />
       )}
     </div>
   );

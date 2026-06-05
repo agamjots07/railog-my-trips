@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, LogOut, ArrowRight, Sparkles } from "lucide-react";
+import { Train, LogOut, ArrowRight } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
 import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { useAchievementQueue } from "@/lib/useAchievementQueue";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
@@ -85,25 +86,14 @@ function FeedPage() {
       )}
 
       {trips?.length === 0 && (
-        <div className="mt-12 flex flex-col items-center text-center">
-          <div
-            className="mb-5 flex h-20 w-20 items-center justify-center rounded-3xl"
-            style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-          >
-            <Train className="h-9 w-9 text-primary-foreground" strokeWidth={2.5} />
-          </div>
-          <h2 className="text-xl font-bold">Start your journey</h2>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Log your first train or ferry ride and build a beautiful travel timeline.
-          </p>
-          <Link
-            to="/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-            style={{ boxShadow: "var(--shadow-glow)" }}
-          >
-            <Sparkles className="h-4 w-4" /> Log a trip
-          </Link>
-        </div>
+        <EmptyState
+          icon={Train}
+          eyebrow="Your journey starts here"
+          title="No trips yet"
+          body="Log your first train, ferry, taxi or adventure — and watch your travel timeline come to life."
+          ctaLabel="Log your first trip"
+          ctaTo="/new"
+        />
       )}
 
       <div className="space-y-3">

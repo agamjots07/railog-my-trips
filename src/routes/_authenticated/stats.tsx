@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3 } from "lucide-react";
 import {
   ACHIEVEMENTS,
   bestStreak,
@@ -10,6 +10,8 @@ import {
   earnedAchievements,
 } from "@/lib/achievements";
 import { personalRecords } from "@/lib/personalRecords";
+import { distanceComparisons } from "@/lib/distanceComparisons";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({ meta: [{ title: "Stats — Railog" }] }),
@@ -45,8 +47,26 @@ function StatsPage() {
       streak: currentStreak(trips),
       best: bestStreak(trips),
       earned: earnedAchievements(trips),
+      comparisons: distanceComparisons(totalKm),
     };
   }, [trips]);
+
+  if (trips && trips.length === 0) {
+    return (
+      <div className="px-5 pt-10">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stats</p>
+        <h1 className="mt-2 text-[34px] font-bold leading-[1.05] tracking-tight">Your travel</h1>
+        <EmptyState
+          icon={BarChart3}
+          eyebrow="Nothing to crunch yet"
+          title="Stats unlock with your first trip"
+          body="Log a journey and watch your distance, streaks, records and achievements come to life here."
+          ctaLabel="Log a trip"
+          ctaTo="/new"
+        />
+      </div>
+    );
+  }
 
   if (!stats) {
     return (
@@ -129,6 +149,35 @@ function StatsPage() {
         <Tile label="Avg trip" value={stats.total ? `${(stats.totalKm / stats.total).toFixed(0)} km` : "0 km"} icon={MapPin} />
         <Tile label="Modes" value={`${stats.train + stats.ferry}`} sub={`${stats.train}T · ${stats.ferry}F`} icon={Train} />
       </div>
+
+      {/* Fun distance comparisons */}
+      {stats.comparisons.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <Globe className="h-3.5 w-3.5" /> Put it in perspective
+          </h2>
+          <div className="space-y-3">
+            {stats.comparisons.map((c, i) => (
+              <div
+                key={i}
+                className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-card p-5"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-25 blur-3xl"
+                  style={{ background: "var(--gradient-primary)" }}
+                />
+                <p className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  {c.label}
+                </p>
+                <p className="relative mt-2 text-[15px] font-semibold leading-snug">
+                  {c.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Personal records */}
       {stats.records.length > 0 && (
