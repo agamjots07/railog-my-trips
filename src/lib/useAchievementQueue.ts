@@ -2,9 +2,13 @@ import { useEffect, useState } from "react";
 import type { Tables } from "@/integrations/supabase/types";
 import {
   type Achievement,
+  earnedAchievements,
+  getSeenAchievements,
   markAchievementsSeen,
   newlyEarnedAchievements,
 } from "@/lib/achievements";
+
+const BOOTSTRAP_KEY = "railog.achievements.bootstrapped";
 
 type Trip = Tables<"trips">;
 
