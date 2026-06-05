@@ -150,6 +150,35 @@ function StatsPage() {
         <Tile label="Modes" value={`${stats.train + stats.ferry}`} sub={`${stats.train}T · ${stats.ferry}F`} icon={Train} />
       </div>
 
+      {/* Fun distance comparisons */}
+      {stats.comparisons.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <Globe className="h-3.5 w-3.5" /> Put it in perspective
+          </h2>
+          <div className="space-y-3">
+            {stats.comparisons.map((c, i) => (
+              <div
+                key={i}
+                className="relative overflow-hidden rounded-3xl border border-white/[0.06] bg-card p-5"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <div
+                  className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full opacity-25 blur-3xl"
+                  style={{ background: "var(--gradient-primary)" }}
+                />
+                <p className="relative text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  {c.label}
+                </p>
+                <p className="relative mt-2 text-[15px] font-semibold leading-snug">
+                  {c.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* Personal records */}
       {stats.records.length > 0 && (
         <>
