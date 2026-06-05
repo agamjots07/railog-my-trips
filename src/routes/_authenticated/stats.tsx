@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3 } from "lucide-react";
 import {
   ACHIEVEMENTS,
   bestStreak,
@@ -10,6 +10,8 @@ import {
   earnedAchievements,
 } from "@/lib/achievements";
 import { personalRecords } from "@/lib/personalRecords";
+import { distanceComparisons } from "@/lib/distanceComparisons";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({ meta: [{ title: "Stats — Railog" }] }),
