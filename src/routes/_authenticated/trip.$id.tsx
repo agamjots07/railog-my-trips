@@ -243,6 +243,10 @@ function TripDetail() {
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{trip.notes}</p>
         </div>
       )}
+
+      {sharing && (
+        <ShareTripCard trip={trip} path={path} onClose={() => setSharing(false)} />
+      )}
     </div>
   );
 }
