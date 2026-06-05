@@ -32,6 +32,7 @@ function TripDetail() {
   const nav = useNavigate();
   const [trip, setTrip] = useState<Trip | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
