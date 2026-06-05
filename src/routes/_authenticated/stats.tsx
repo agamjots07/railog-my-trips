@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock } from "lucide-react";
+import {
+  ACHIEVEMENTS,
+  bestStreak,
+  currentStreak,
+  earnedAchievements,
+} from "@/lib/achievements";
+import { personalRecords } from "@/lib/personalRecords";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({ meta: [{ title: "Stats — Railog" }] }),
@@ -26,12 +33,19 @@ function StatsPage() {
       totalKm += t.distance_km ?? 0;
       if (t.end_time) totalMin += (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
       if (t.mode === "train") { train++; trainKm += t.distance_km ?? 0; }
-      else { ferry++; ferryKm += t.distance_km ?? 0; }
+      else if (t.mode === "ferry") { ferry++; ferryKm += t.distance_km ?? 0; }
       const key = t.route_name || `${t.origin} → ${t.destination}`;
       routes.set(key, (routes.get(key) ?? 0) + 1);
     }
     const top = [...routes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-    return { totalKm, totalMin, train, ferry, trainKm, ferryKm, total: trips.length, top };
+    return {
+      totalKm, totalMin, train, ferry, trainKm, ferryKm,
+      total: trips.length, top,
+      records: personalRecords(trips),
+      streak: currentStreak(trips),
+      best: bestStreak(trips),
+      earned: earnedAchievements(trips),
+    };
   }, [trips]);
 
   if (!stats) {
@@ -48,7 +62,7 @@ function StatsPage() {
   };
 
   return (
-    <div className="relative px-5 pt-10">
+    <div className="relative px-5 pt-10 pb-10">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-72 -z-10"
         style={{ background: "var(--gradient-hero)" }}
@@ -78,6 +92,37 @@ function StatsPage() {
         </p>
       </div>
 
+      {/* Streak card */}
+      <div
+        className="mt-4 flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-card p-5"
+        style={{ boxShadow: "var(--shadow-card)" }}
+      >
+        <div
+          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+          style={{
+            background: stats.streak > 0
+              ? "linear-gradient(135deg, #f97316, #ef4444)"
+              : "rgba(255,255,255,0.05)",
+            boxShadow: stats.streak > 0 ? "0 10px 30px -8px rgba(239,68,68,0.5)" : "none",
+          }}
+        >
+          <Flame className={`h-7 w-7 ${stats.streak > 0 ? "text-white" : "text-muted-foreground"}`} strokeWidth={2.5} />
+        </div>
+        <div className="flex-1">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Current streak</p>
+          <p className="mt-1 font-mono text-3xl font-bold leading-none tabular-nums">
+            {stats.streak}
+            <span className="ml-1.5 text-sm font-semibold text-muted-foreground">
+              {stats.streak === 1 ? "day" : "days"}
+            </span>
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">Best</p>
+          <p className="mt-1 font-mono text-xl font-bold tabular-nums">{stats.best}</p>
+        </div>
+      </div>
+
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Tile label="Trips" value={`${stats.total}`} icon={RouteIcon} />
         <Tile label="Time" value={fmtH(stats.totalMin)} icon={Clock} />
@@ -85,12 +130,75 @@ function StatsPage() {
         <Tile label="Modes" value={`${stats.train + stats.ferry}`} sub={`${stats.train}T · ${stats.ferry}F`} icon={Train} />
       </div>
 
+      {/* Personal records */}
+      {stats.records.length > 0 && (
+        <>
+          <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <Trophy className="h-3.5 w-3.5" /> Personal records
+          </h2>
+          <div className="grid grid-cols-2 gap-3">
+            {stats.records.map((r) => (
+              <div
+                key={r.label}
+                className="rounded-3xl border border-white/[0.06] bg-card p-4"
+                style={{ boxShadow: "var(--shadow-card)" }}
+              >
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                  {r.label}
+                </p>
+                <p className="mt-2.5 font-mono text-2xl font-bold leading-none tabular-nums">{r.value}</p>
+                {r.sub && (
+                  <p className="mt-1.5 truncate text-[11px] text-muted-foreground" title={r.sub}>
+                    {r.sub}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <h2 className="mt-8 mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         Mode breakdown
       </h2>
       <div className="space-y-3">
         <ModeBar icon={Train} label="Train" count={stats.train} km={stats.trainKm} total={stats.total} gradient="var(--gradient-primary)" />
         <ModeBar icon={Ship} label="Ferry" count={stats.ferry} km={stats.ferryKm} total={stats.total} gradient="var(--gradient-ferry)" />
+      </div>
+
+      {/* Achievements */}
+      <h2 className="mt-8 mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+        <span>Achievements</span>
+        <span className="font-mono text-foreground">
+          {stats.earned.length}/{ACHIEVEMENTS.length}
+        </span>
+      </h2>
+      <div className="grid grid-cols-3 gap-3">
+        {ACHIEVEMENTS.map((a) => {
+          const got = stats.earned.some((e) => e.id === a.id);
+          const Icon = got ? a.icon : Lock;
+          return (
+            <div
+              key={a.id}
+              className="rounded-2xl border border-white/[0.06] bg-card p-3 text-center"
+              style={{
+                boxShadow: "var(--shadow-card)",
+                opacity: got ? 1 : 0.45,
+              }}
+            >
+              <div
+                className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl"
+                style={{
+                  background: got ? a.color : "rgba(255,255,255,0.05)",
+                  boxShadow: got ? `0 8px 24px -8px ${a.color}80` : "none",
+                }}
+              >
+                <Icon className={`h-6 w-6 ${got ? "text-white" : "text-muted-foreground"}`} strokeWidth={2.5} />
+              </div>
+              <p className="mt-2 text-[10px] font-bold leading-tight">{a.title}</p>
+            </div>
+          );
+        })}
       </div>
 
       <h2 className="mt-8 mb-3 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
