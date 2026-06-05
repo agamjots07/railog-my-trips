@@ -39,8 +39,11 @@ function FeedPage() {
     return { count: trips.length, km };
   }, [trips]);
 
+  const { current: celebrating, dismiss } = useAchievementQueue(trips);
+
   return (
     <div className="relative px-5 pt-10">
+      <AchievementCelebration achievement={celebrating} onClose={dismiss} />
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-72 -z-10"
         style={{ background: "var(--gradient-hero)" }}
