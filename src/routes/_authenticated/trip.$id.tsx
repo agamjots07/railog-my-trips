@@ -134,13 +134,22 @@ function TripDetail() {
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Trips
         </Link>
-        <button
-          onClick={remove}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
-          aria-label="Delete"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSharing(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-primary"
+            aria-label="Share"
+          >
+            <Share2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={remove}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
+            aria-label="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       <div className="mb-4 flex items-center gap-2">
