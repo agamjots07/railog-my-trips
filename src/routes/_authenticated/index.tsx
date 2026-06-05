@@ -3,12 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, LogOut, ArrowRight, Sparkles } from "lucide-react";
+import { Train, LogOut, ArrowRight } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
 import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { useAchievementQueue } from "@/lib/useAchievementQueue";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
