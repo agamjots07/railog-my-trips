@@ -47,8 +47,26 @@ function StatsPage() {
       streak: currentStreak(trips),
       best: bestStreak(trips),
       earned: earnedAchievements(trips),
+      comparisons: distanceComparisons(totalKm),
     };
   }, [trips]);
+
+  if (trips && trips.length === 0) {
+    return (
+      <div className="px-5 pt-10">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Stats</p>
+        <h1 className="mt-2 text-[34px] font-bold leading-[1.05] tracking-tight">Your travel</h1>
+        <EmptyState
+          icon={BarChart3}
+          eyebrow="Nothing to crunch yet"
+          title="Stats unlock with your first trip"
+          body="Log a journey and watch your distance, streaks, records and achievements come to life here."
+          ctaLabel="Log a trip"
+          ctaTo="/new"
+        />
+      </div>
+    );
+  }
 
   if (!stats) {
     return (
