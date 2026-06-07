@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { ShareTripCard } from "@/components/ShareTripCard";
+import { GoTrainCard } from "@/components/GoTrainCard";
+import { isGoTrip } from "@/lib/goTrains";
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
   head: () => ({ meta: [{ title: "Trip — Railog" }] }),
