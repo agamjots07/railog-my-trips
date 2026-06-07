@@ -21,6 +21,7 @@ const AGENCY_LABEL: Record<string, string> = {
   lvm: "Las Vegas Monorail",
   vmr: "Valley Metro Rail",
   tif: "Toronto Island Ferry",
+  tews: "Toronto East-West Water Shuttle",
   bcf: "BC Ferries",
 };
 
