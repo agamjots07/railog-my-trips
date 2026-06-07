@@ -134,22 +134,13 @@ function TripDetail() {
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Trips
         </Link>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setSharing(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-primary"
-            aria-label="Share"
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={remove}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
-            aria-label="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
+        <button
+          onClick={remove}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-destructive"
+          aria-label="Delete"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="mb-4 flex items-center gap-2">
@@ -242,6 +233,16 @@ function TripDetail() {
           </p>
           <p className="text-sm leading-relaxed whitespace-pre-wrap">{trip.notes}</p>
         </div>
+      )}
+
+      {!isLive && (
+        <button
+          onClick={() => setSharing(true)}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
+          style={{ boxShadow: "var(--shadow-glow)" }}
+        >
+          <Share2 className="h-5 w-5" /> Share this trip
+        </button>
       )}
 
       {sharing && (
