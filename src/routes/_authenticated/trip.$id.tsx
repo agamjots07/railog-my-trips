@@ -196,6 +196,10 @@ function TripDetail() {
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
+      {mode === "train" && isGoTrip(trip.origin_osm_id, trip.destination_osm_id) && (
+        <GoTrainCard routeName={trip.route_name} />
+      )}
+
       {vehicle && (
         <div
           className="mt-5 flex items-center gap-3 rounded-3xl border border-white/[0.06] bg-card p-4"
