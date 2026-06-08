@@ -161,6 +161,14 @@ function TripDetail() {
             {tracking ? "Recording" : "Starting…"}
           </span>
         )}
+        {isLive && wakeLockActive && (
+          <span
+            className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300"
+            title="Screen will stay on while recording"
+          >
+            <Sun className="h-3 w-3" strokeWidth={2.5} /> Awake
+          </span>
+        )}
       </div>
 
       <h1 className="text-[26px] font-bold leading-tight tracking-tight">
