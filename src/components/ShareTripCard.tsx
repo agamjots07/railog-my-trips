@@ -114,6 +114,46 @@ export function ShareTripCard({
   const fitPoints: LatLng[] = routeLine ?? stops;
   const dashed = mode === "ferry" || mode === "jetski";
 
+  // Resolve place names for start/end. Use real trip.origin / trip.destination
+  // when they aren't placeholder "Live …" strings; otherwise reverse-geocode
+  // from the path or stop coordinates.
+  useEffect(() => {
+    let cancelled = false;
+    const startPt: LatLng | null =
+      (path && path[0]) ??
+      (trip.origin_lat != null && trip.origin_lng != null
+        ? [trip.origin_lat, trip.origin_lng]
+        : null);
+    const endPt: LatLng | null =
+      (path && path.length > 1 ? path[path.length - 1] : null) ??
+      (trip.destination_lat != null && trip.destination_lng != null
+        ? [trip.destination_lat, trip.destination_lng]
+        : null);
+
+    if (!isPlaceholder(trip.origin)) {
+      setOriginLabel(trip.origin);
+    } else if (startPt) {
+      reverseGeocode(startPt).then((l) => {
+        if (!cancelled) setOriginLabel(l ?? "Start");
+      });
+    } else {
+      setOriginLabel("Start");
+    }
+
+    if (!isPlaceholder(trip.destination)) {
+      setDestLabel(trip.destination);
+    } else if (endPt) {
+      reverseGeocode(endPt).then((l) => {
+        if (!cancelled) setDestLabel(l ?? "End");
+      });
+    } else {
+      setDestLabel("End");
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [trip.origin, trip.destination, trip.origin_lat, trip.origin_lng, trip.destination_lat, trip.destination_lng, path]);
+
   const generate = async (): Promise<Blob | null> => {
     if (!cardRef.current) return null;
     const dataUrl = await toPng(cardRef.current, {
