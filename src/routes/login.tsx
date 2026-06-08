@@ -6,7 +6,7 @@ import { Train, Ship } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — Railog" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Pencer" }] }),
   component: LoginPage,
 });
 
@@ -53,7 +53,7 @@ function LoginPage() {
           <Ship className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-card p-0.5 text-[var(--ferry)]" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Railog</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Pencer</h1>
           <p className="text-xs text-muted-foreground">Train & ferry trips, mapped.</p>
         </div>
       </div>

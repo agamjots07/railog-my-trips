@@ -12,7 +12,7 @@ import { useAchievementQueue } from "@/lib/useAchievementQueue";
 import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Your trips — Railog" }] }),
+  head: () => ({ meta: [{ title: "Your trips — Pencer" }] }),
   component: FeedPage,
 });
 
@@ -55,7 +55,7 @@ function FeedPage() {
           <div className="flex items-center gap-2">
             <span className="flex h-1.5 w-1.5 rounded-full bg-primary live-dot" />
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Railog
+              Pencer
             </p>
           </div>
           <h1 className="mt-2 text-[34px] font-bold leading-[1.05] tracking-tight">

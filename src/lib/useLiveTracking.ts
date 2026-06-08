@@ -71,10 +71,9 @@ export function useLiveTracking(opts: {
     acquire();
 
     const onVisibility = () => {
-      if (document.visibilityState === "visible" && !wakeLockRef.current?.released) {
-        // re-acquire if browser released it on tab hide
-        if (!wakeLockRef.current || wakeLockRef.current.released) acquire();
-      }
+      if (document.visibilityState !== "visible") return;
+      // browser auto-releases wake lock when tab is hidden — re-acquire on return
+      if (!wakeLockRef.current || wakeLockRef.current.released) acquire();
     };
     document.addEventListener("visibilitychange", onVisibility);
 

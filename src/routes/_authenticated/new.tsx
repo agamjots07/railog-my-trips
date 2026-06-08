@@ -36,7 +36,7 @@ const fmtHM = (s: number) => {
 };
 
 export const Route = createFileRoute("/_authenticated/new")({
-  head: () => ({ meta: [{ title: "Log a trip — Railog" }] }),
+  head: () => ({ meta: [{ title: "Log a trip — Pencer" }] }),
   component: NewTrip,
 });
 

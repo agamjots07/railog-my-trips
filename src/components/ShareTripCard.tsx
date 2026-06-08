@@ -91,7 +91,7 @@ export function ShareTripCard({
   const title = useMemo(() => {
     if (mode === "taxi") {
       if (vehicle?.name) return vehicle.name;
-      return MODE_LABEL.taxi;
+      return "Road";
     }
     if (trip.route_name) return trip.route_name;
     return `${trip.origin} → ${trip.destination}`;
@@ -165,7 +165,7 @@ export function ShareTripCard({
     return await res.blob();
   };
 
-  const filename = `railog-${(trip.route_name || trip.id)
+  const filename = `pencer-${(trip.route_name || trip.id)
     .toString()
     .replace(/\s+/g, "-")
     .toLowerCase()}.png`;
@@ -181,7 +181,7 @@ export function ShareTripCard({
       };
       // iOS / mobile: use Web Share to access "Save Image" → Photos
       if (nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: "Railog", text: title });
+        await nav.share({ files: [file], title: "Pencer", text: title });
         return;
       }
       // Desktop / fallback: download
@@ -216,8 +216,8 @@ export function ShareTripCard({
       if (nav.canShare?.({ files: [file] })) {
         await nav.share({
           files: [file],
-          title: "Railog",
-          text: `${title} — ${distance} km on Railog`,
+          title: "Pencer",
+          text: `${title} — ${distance} km on Pencer`,
         });
       } else {
         // Open in new tab so user can long-press → Save Image
@@ -281,7 +281,7 @@ export function ShareTripCard({
                 <div className="flex items-center gap-2">
                   <span className="flex h-1.5 w-1.5 rounded-full bg-white/80" />
                   <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-white/70">
-                    Railog
+                    Pencer
                   </p>
                 </div>
                 <div
@@ -289,7 +289,7 @@ export function ShareTripCard({
                   style={{ background: `${color}25`, color }}
                 >
                   <Icon className="h-3 w-3" strokeWidth={3} />
-                  {MODE_LABEL[mode] ?? mode}
+                  {mode === "taxi" ? "Road" : (MODE_LABEL[mode] ?? mode)}
                 </div>
               </div>
 

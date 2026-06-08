@@ -8,7 +8,7 @@ const SLIDES = [
   {
     icon: Train,
     color: "#a78bfa",
-    eyebrow: "Welcome to Railog",
+    eyebrow: "Welcome to Pencer",
     title: "Every journey,\nlogged beautifully.",
     body: "Track every train, ferry, taxi and adventure you take — in one elegant timeline.",
   },
