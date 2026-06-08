@@ -283,7 +283,7 @@ function TripDetail() {
       )}
 
       {sharing && (
-        <ShareTripCard trip={trip} path={path} onClose={() => setSharing(false)} />
+        <ShareTripCard trip={trip} path={path} vehicle={vehicle} onClose={() => setSharing(false)} />
       )}
     </div>
   );
