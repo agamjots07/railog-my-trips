@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { toPng } from "html-to-image";
@@ -8,10 +8,18 @@ import { Download, Share2, X, MapPin, Loader2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { fmtDate, fmtDuration } from "@/lib/geo";
+import { reverseGeocode } from "@/lib/reverseGeocode";
 import { toast } from "sonner";
 
 type Trip = Tables<"trips">;
+type Vehicle = Tables<"vehicles">;
 type LatLng = [number, number];
+
+function isPlaceholder(s: string | null | undefined) {
+  if (!s) return true;
+  const t = s.trim().toLowerCase();
+  return t === "" || t === "live" || t === "live start" || t === "live end" || t.startsWith("live ");
+}
 
 function FitBounds({ points }: { points: LatLng[] }) {
   const map = useMap();
