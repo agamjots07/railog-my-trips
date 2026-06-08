@@ -204,6 +204,29 @@ function TripDetail() {
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
+      {isLive && (
+        <div
+          className="mt-5 flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-card p-5"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-2xl text-primary"
+            style={{ background: `${color}1f` }}
+          >
+            <Gauge className="h-7 w-7" strokeWidth={2.5} style={{ color }} />
+          </span>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Current speed
+            </p>
+            <p className="mt-0.5 font-mono text-4xl font-bold tabular-nums leading-none">
+              {speedKmh != null ? Math.max(0, Math.round(speedKmh)) : "—"}
+              <span className="ml-1.5 text-sm font-semibold text-muted-foreground">km/h</span>
+            </p>
+          </div>
+        </div>
+      )}
+
       {mode === "train" && isGoTrip(trip.origin_osm_id, trip.destination_osm_id) && (
         <GoTrainCard routeName={trip.route_name} />
       )}
