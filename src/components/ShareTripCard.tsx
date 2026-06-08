@@ -165,7 +165,7 @@ export function ShareTripCard({
     return await res.blob();
   };
 
-  const filename = `railog-${(trip.route_name || trip.id)
+  const filename = `pencer-${(trip.route_name || trip.id)
     .toString()
     .replace(/\s+/g, "-")
     .toLowerCase()}.png`;
