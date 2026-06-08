@@ -289,7 +289,7 @@ export function ShareTripCard({
                   style={{ background: `${color}25`, color }}
                 >
                   <Icon className="h-3 w-3" strokeWidth={3} />
-                  {MODE_LABEL[mode] ?? mode}
+                  {mode === "taxi" ? "Road" : (MODE_LABEL[mode] ?? mode)}
                 </div>
               </div>
 
