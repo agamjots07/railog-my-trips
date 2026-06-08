@@ -298,9 +298,9 @@ export function ShareTripCard({
               </h2>
               <div className="relative mt-1 flex items-center gap-1.5 text-xs text-white/60">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{trip.origin}</span>
+                <span className="truncate">{originLabel ?? "…"}</span>
                 <span>→</span>
-                <span className="truncate">{trip.destination}</span>
+                <span className="truncate">{destLabel ?? "…"}</span>
               </div>
 
               {/* Real map */}
