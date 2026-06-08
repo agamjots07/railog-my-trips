@@ -327,8 +327,7 @@ export function ShareTripCard({
                     style={{ height: "100%", width: "100%", background: "#0f0f17" }}
                   >
                     <TileLayer
-                      url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                      subdomains="abcd"
+                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                       maxZoom={19}
                       crossOrigin="anonymous"
                     />
