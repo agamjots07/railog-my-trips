@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2 } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
@@ -59,7 +59,7 @@ function TripDetail() {
   const isLive = !!trip?.is_live && !trip?.end_time;
   const initialPath = useMemo(() => (trip ? parsePath(trip.route_geometry) : []), [trip]);
 
-  const { path: livePath, tracking, error: gpsError, finalize } = useLiveTracking({
+  const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive } = useLiveTracking({
     tripId: id,
     enabled: isLive,
     initialPath,
@@ -161,6 +161,14 @@ function TripDetail() {
             {tracking ? "Recording" : "Starting…"}
           </span>
         )}
+        {isLive && wakeLockActive && (
+          <span
+            className="flex items-center gap-1 rounded-full bg-amber-400/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300"
+            title="Screen will stay on while recording"
+          >
+            <Sun className="h-3 w-3" strokeWidth={2.5} /> Awake
+          </span>
+        )}
       </div>
 
       <h1 className="text-[26px] font-bold leading-tight tracking-tight">
@@ -195,6 +203,29 @@ function TripDetail() {
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
+
+      {isLive && (
+        <div
+          className="mt-5 flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-card p-5"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <span
+            className="flex h-14 w-14 items-center justify-center rounded-2xl text-primary"
+            style={{ background: `${color}1f` }}
+          >
+            <Gauge className="h-7 w-7" strokeWidth={2.5} style={{ color }} />
+          </span>
+          <div className="flex-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              Current speed
+            </p>
+            <p className="mt-0.5 font-mono text-4xl font-bold tabular-nums leading-none">
+              {speedKmh != null ? Math.max(0, Math.round(speedKmh)) : "—"}
+              <span className="ml-1.5 text-sm font-semibold text-muted-foreground">km/h</span>
+            </p>
+          </div>
+        </div>
+      )}
 
       {mode === "train" && isGoTrip(trip.origin_osm_id, trip.destination_osm_id) && (
         <GoTrainCard routeName={trip.route_name} />
@@ -252,7 +283,7 @@ function TripDetail() {
       )}
 
       {sharing && (
-        <ShareTripCard trip={trip} path={path} onClose={() => setSharing(false)} />
+        <ShareTripCard trip={trip} path={path} vehicle={vehicle} onClose={() => setSharing(false)} />
       )}
     </div>
   );

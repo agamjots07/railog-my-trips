@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { toPng } from "html-to-image";
@@ -8,10 +8,18 @@ import { Download, Share2, X, MapPin, Loader2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { fmtDate, fmtDuration } from "@/lib/geo";
+import { reverseGeocode } from "@/lib/reverseGeocode";
 import { toast } from "sonner";
 
 type Trip = Tables<"trips">;
+type Vehicle = Tables<"vehicles">;
 type LatLng = [number, number];
+
+function isPlaceholder(s: string | null | undefined) {
+  if (!s) return true;
+  const t = s.trim().toLowerCase();
+  return t === "" || t === "live" || t === "live start" || t === "live end" || t.startsWith("live ");
+}
 
 function FitBounds({ points }: { points: LatLng[] }) {
   const map = useMap();
@@ -61,20 +69,34 @@ function MapReady({ onReady }: { onReady: () => void }) {
 export function ShareTripCard({
   trip,
   path,
+  vehicle,
   onClose,
 }: {
   trip: Trip;
   path: LatLng[];
+  vehicle?: Vehicle | null;
   onClose: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [originLabel, setOriginLabel] = useState<string | null>(null);
+  const [destLabel, setDestLabel] = useState<string | null>(null);
 
   const mode = trip.mode as TripMode;
   const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
   const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
-  const title = trip.route_name || `${trip.origin} → ${trip.destination}`;
+
+  // Title: vehicle name for taxi, else route_name or origin → destination
+  const title = useMemo(() => {
+    if (mode === "taxi") {
+      if (vehicle?.name) return vehicle.name;
+      return MODE_LABEL.taxi;
+    }
+    if (trip.route_name) return trip.route_name;
+    return `${trip.origin} → ${trip.destination}`;
+  }, [mode, vehicle?.name, trip.route_name, trip.origin, trip.destination]);
+
   const distance = trip.distance_km
     ? `${trip.distance_km.toFixed(trip.distance_km < 10 ? 1 : 0)}`
     : "—";
@@ -91,6 +113,46 @@ export function ShareTripCard({
   const routeLine = path && path.length >= 2 ? path : null;
   const fitPoints: LatLng[] = routeLine ?? stops;
   const dashed = mode === "ferry" || mode === "jetski";
+
+  // Resolve place names for start/end. Use real trip.origin / trip.destination
+  // when they aren't placeholder "Live …" strings; otherwise reverse-geocode
+  // from the path or stop coordinates.
+  useEffect(() => {
+    let cancelled = false;
+    const startPt: LatLng | null =
+      (path && path[0]) ??
+      (trip.origin_lat != null && trip.origin_lng != null
+        ? [trip.origin_lat, trip.origin_lng]
+        : null);
+    const endPt: LatLng | null =
+      (path && path.length > 1 ? path[path.length - 1] : null) ??
+      (trip.destination_lat != null && trip.destination_lng != null
+        ? [trip.destination_lat, trip.destination_lng]
+        : null);
+
+    if (!isPlaceholder(trip.origin)) {
+      setOriginLabel(trip.origin);
+    } else if (startPt) {
+      reverseGeocode(startPt).then((l) => {
+        if (!cancelled) setOriginLabel(l ?? "Start");
+      });
+    } else {
+      setOriginLabel("Start");
+    }
+
+    if (!isPlaceholder(trip.destination)) {
+      setDestLabel(trip.destination);
+    } else if (endPt) {
+      reverseGeocode(endPt).then((l) => {
+        if (!cancelled) setDestLabel(l ?? "End");
+      });
+    } else {
+      setDestLabel("End");
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [trip.origin, trip.destination, trip.origin_lat, trip.origin_lng, trip.destination_lat, trip.destination_lng, path]);
 
   const generate = async (): Promise<Blob | null> => {
     if (!cardRef.current) return null;
@@ -236,9 +298,9 @@ export function ShareTripCard({
               </h2>
               <div className="relative mt-1 flex items-center gap-1.5 text-xs text-white/60">
                 <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{trip.origin}</span>
+                <span className="truncate">{originLabel ?? "…"}</span>
                 <span>→</span>
-                <span className="truncate">{trip.destination}</span>
+                <span className="truncate">{destLabel ?? "…"}</span>
               </div>
 
               {/* Real map */}
@@ -265,8 +327,7 @@ export function ShareTripCard({
                     style={{ height: "100%", width: "100%", background: "#0f0f17" }}
                   >
                     <TileLayer
-                      url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                      subdomains="abcd"
+                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                       maxZoom={19}
                       crossOrigin="anonymous"
                     />
