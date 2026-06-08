@@ -13,7 +13,7 @@ import { GoTrainCard } from "@/components/GoTrainCard";
 import { isGoTrip } from "@/lib/goTrains";
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
-  head: () => ({ meta: [{ title: "Trip — Railog" }] }),
+  head: () => ({ meta: [{ title: "Trip — Pencer" }] }),
   component: TripDetail,
 });
 

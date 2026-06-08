@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { CAR_MAKES, CAR_YEARS } from "@/lib/carDatabase";
 
 export const Route = createFileRoute("/_authenticated/garage")({
-  head: () => ({ meta: [{ title: "Garage — Railog" }] }),
+  head: () => ({ meta: [{ title: "Garage — Pencer" }] }),
   component: GaragePage,
 });
 

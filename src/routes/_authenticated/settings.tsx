@@ -3,7 +3,7 @@ import { Car, ChevronRight, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Settings — Railog" }] }),
+  head: () => ({ meta: [{ title: "Settings — Pencer" }] }),
   component: SettingsPage,
 });
 

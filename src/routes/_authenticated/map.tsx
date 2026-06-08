@@ -10,7 +10,7 @@ import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 
 export const Route = createFileRoute("/_authenticated/map")({
-  head: () => ({ meta: [{ title: "Journey Map — Railog" }] }),
+  head: () => ({ meta: [{ title: "Journey Map — Pencer" }] }),
   component: JourneyMapPage,
 });
 

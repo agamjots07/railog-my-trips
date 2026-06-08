@@ -14,7 +14,7 @@ import { distanceComparisons } from "@/lib/distanceComparisons";
 import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/stats")({
-  head: () => ({ meta: [{ title: "Stats — Railog" }] }),
+  head: () => ({ meta: [{ title: "Stats — Pencer" }] }),
   component: StatsPage,
 });
 
