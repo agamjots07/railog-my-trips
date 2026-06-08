@@ -69,20 +69,34 @@ function MapReady({ onReady }: { onReady: () => void }) {
 export function ShareTripCard({
   trip,
   path,
+  vehicle,
   onClose,
 }: {
   trip: Trip;
   path: LatLng[];
+  vehicle?: Vehicle | null;
   onClose: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [originLabel, setOriginLabel] = useState<string | null>(null);
+  const [destLabel, setDestLabel] = useState<string | null>(null);
 
   const mode = trip.mode as TripMode;
   const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
   const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
-  const title = trip.route_name || `${trip.origin} → ${trip.destination}`;
+
+  // Title: vehicle name for taxi, else route_name or origin → destination
+  const title = useMemo(() => {
+    if (mode === "taxi") {
+      if (vehicle?.name) return vehicle.name;
+      return MODE_LABEL.taxi;
+    }
+    if (trip.route_name) return trip.route_name;
+    return `${trip.origin} → ${trip.destination}`;
+  }, [mode, vehicle?.name, trip.route_name, trip.origin, trip.destination]);
+
   const distance = trip.distance_km
     ? `${trip.distance_km.toFixed(trip.distance_km < 10 ? 1 : 0)}`
     : "—";
