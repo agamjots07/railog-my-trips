@@ -22,6 +22,7 @@ const AGENCY_LABEL: Record<string, string> = {
   vmr: "Valley Metro Rail",
   tif: "Toronto Island Ferry",
   tews: "Toronto East-West Water Shuttle",
+  wif: "Wolfe Island Ferry",
   bcf: "BC Ferries",
 };
 
