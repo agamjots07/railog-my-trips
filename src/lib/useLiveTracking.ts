@@ -165,6 +165,18 @@ export function useLiveTracking(opts: {
     const finalPath = pathRef.current;
     const km = totalKm(finalPath);
     const endIso = new Date().toISOString();
+    // Fetch start_time to compute avg speed
+    const { data: existing } = await supabase
+      .from("trips")
+      .select("start_time")
+      .eq("id", tripId)
+      .maybeSingle();
+    const startMs = existing?.start_time
+      ? new Date(existing.start_time).getTime()
+      : startedAtRef.current ?? Date.now();
+    const hours = Math.max(0, (new Date(endIso).getTime() - startMs) / 3_600_000);
+    const avg = hours > 0 ? km / hours : null;
+    const maxS = maxSpeedRef.current > 0 ? maxSpeedRef.current : null;
     const { error: e } = await supabase
       .from("trips")
       .update({
@@ -172,6 +184,8 @@ export function useLiveTracking(opts: {
         distance_km: km,
         end_time: endIso,
         is_live: false,
+        avg_speed_kmh: avg,
+        max_speed_kmh: maxS,
       })
       .eq("id", tripId);
     if (e) throw e;
