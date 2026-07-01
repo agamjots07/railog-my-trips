@@ -97,17 +97,24 @@ export function useLiveTracking(opts: {
     }
 
     setTracking(true);
+    if (startedAtRef.current == null) startedAtRef.current = Date.now();
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const pt: LatLng = [pos.coords.latitude, pos.coords.longitude];
         const last = pathRef.current[pathRef.current.length - 1];
         const now = pos.timestamp || Date.now();
         // speed: prefer device-provided (m/s), fall back to derived
+        let s: number | null = null;
         if (typeof pos.coords.speed === "number" && pos.coords.speed >= 0) {
-          setSpeedKmh(pos.coords.speed * 3.6);
+          s = pos.coords.speed * 3.6;
         } else if (last && lastFixTimeRef.current) {
           const dt = (now - lastFixTimeRef.current) / 1000;
-          if (dt > 0) setSpeedKmh((distM(last, pt) / dt) * 3.6);
+          if (dt > 0) s = (distM(last, pt) / dt) * 3.6;
+        }
+        if (s != null) {
+          setSpeedKmh(s);
+          // Ignore GPS jitter spikes (>400 km/h is not a real vehicle)
+          if (s > maxSpeedRef.current && s < 400) maxSpeedRef.current = s;
         }
         lastFixTimeRef.current = now;
         if (!last || distM(last, pt) >= MIN_MOVE_M) {
