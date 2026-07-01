@@ -259,6 +259,60 @@ function StatsPage() {
         <ModeBar icon={Ship} label="Ferry" count={stats.ferry} km={stats.ferryKm} total={stats.total} gradient="var(--gradient-ferry)" />
       </div>
 
+      {/* Road stats */}
+      {stats.road.count > 0 && (() => {
+        const r = stats.road;
+        const topVehicle = r.topVehicleId ? vehicles.find((v) => v.id === r.topVehicleId) : null;
+        const topVehicleLabel = topVehicle
+          ? `${topVehicle.name}${topVehicle.make || topVehicle.model ? ` · ${[topVehicle.make, topVehicle.model].filter(Boolean).join(" ")}` : ""}`
+          : "—";
+        return (
+          <>
+            <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+              <Car className="h-3.5 w-3.5" /> Road stats
+            </h2>
+            <div
+              className="rounded-3xl border border-white/[0.06] bg-card p-5"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <RoadRow
+                icon={RouteIcon}
+                label="Most frequent route"
+                value={r.topRoute ? r.topRoute[0] : "—"}
+                sub={r.topRoute ? `×${r.topRoute[1]}` : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={Car}
+                label="Most used vehicle"
+                value={topVehicleLabel}
+                sub={r.topVehicleId ? `${r.topVehicleCount} ${r.topVehicleCount === 1 ? "trip" : "trips"}` : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={Clock}
+                label="Total time as passenger"
+                value={fmtH(r.totalMin)}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={MapPin}
+                label="Longest trip"
+                value={r.longest ? `${r.longest.km.toFixed(r.longest.km < 10 ? 2 : 0)} km` : "—"}
+                sub={r.longest ? (r.longest.trip.route_name || `${r.longest.trip.origin} → ${r.longest.trip.destination}`) : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={Gauge}
+                label="Fastest ride"
+                value={r.fastest ? `${Math.round(r.fastest.kmh)} km/h` : "—"}
+                sub={r.fastest ? (r.fastest.trip.route_name || `${r.fastest.trip.origin} → ${r.fastest.trip.destination}`) : undefined}
+              />
+            </div>
+          </>
+        );
+      })()}
+
       {/* Achievements */}
       <h2 className="mt-8 mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         <span>Achievements</span>
