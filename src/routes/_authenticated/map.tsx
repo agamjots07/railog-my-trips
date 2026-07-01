@@ -84,7 +84,9 @@ const ADV_SET = new Set<SubMode>(["jetski", "atv", "skateboard", "gondola"]);
 
 function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [tab, setTab] = useState<Tab>("all");
+  const [vehicleFilter, setVehicleFilter] = useState<string>("");
   const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
 
   useEffect(() => {
@@ -93,6 +95,11 @@ function JourneyMapPage() {
       .select("*")
       .order("start_time", { ascending: false })
       .then(({ data }) => setTrips(data ?? []));
+    supabase
+      .from("vehicles")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setVehicles(data ?? []));
   }, []);
 
   const enriched = useMemo(() => {
@@ -103,12 +110,14 @@ function JourneyMapPage() {
   }, [trips]);
 
   const visible = useMemo(() => {
-    if (tab === "all") return enriched;
-    if (tab === "water") return enriched.filter((x) => x.sub === "ferry");
-    if (tab === "rail") return enriched.filter((x) => RAIL_SET.has(x.sub));
-    if (tab === "road") return enriched.filter((x) => x.sub === "taxi");
-    return enriched.filter((x) => ADV_SET.has(x.sub));
-  }, [enriched, tab]);
+    let list = enriched;
+    if (tab === "water") list = list.filter((x) => x.sub === "ferry");
+    else if (tab === "rail") list = list.filter((x) => RAIL_SET.has(x.sub));
+    else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
+    else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
+    if (vehicleFilter) list = list.filter((x) => x.trip.vehicle_id === vehicleFilter);
+    return list;
+  }, [enriched, tab, vehicleFilter]);
 
   const allPoints = useMemo(() => visible.flatMap((x) => x.path), [visible]);
 
@@ -213,6 +222,36 @@ function JourneyMapPage() {
             </button>
           ))}
         </div>
+
+        {vehicles.length > 0 && (tab === "all" || tab === "road") && (
+          <div className="pointer-events-auto mt-2 flex items-center gap-2 rounded-full border border-white/[0.06] bg-card/80 px-3 py-1.5 backdrop-blur-xl">
+            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Vehicle
+            </span>
+            <select
+              value={vehicleFilter}
+              onChange={(e) => setVehicleFilter(e.target.value)}
+              className="flex-1 bg-transparent text-[12px] font-semibold text-foreground outline-none"
+            >
+              <option value="">All vehicles</option>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.name}
+                  {v.make || v.model ? ` · ${[v.make, v.model].filter(Boolean).join(" ")}` : ""}
+                </option>
+              ))}
+            </select>
+            {vehicleFilter && (
+              <button
+                type="button"
+                onClick={() => setVehicleFilter("")}
+                className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500] flex flex-col items-end gap-2">
