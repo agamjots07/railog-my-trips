@@ -36,6 +36,8 @@ export function useLiveTracking(opts: {
   const dirtyRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
+  const maxSpeedRef = useRef<number>(0);
+  const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     pathRef.current = initialPath;
