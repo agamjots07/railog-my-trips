@@ -178,6 +178,13 @@ function NewTrip() {
         }
       }
 
+      // Compute average speed for past trips (km/h) when we have both distance and duration.
+      let avgSpeedKmh: number | null = null;
+      if (!isLive && distance != null && endISO) {
+        const hrs = (new Date(endISO).getTime() - new Date(startISO).getTime()) / 3_600_000;
+        if (hrs > 0) avgSpeedKmh = distance / hrs;
+      }
+
       const { data, error } = await supabase
         .from("trips")
         .insert({
@@ -196,6 +203,7 @@ function NewTrip() {
           destination_osm_id: d ? d.id : null,
           route_geometry: geometry,
           distance_km: distance,
+          avg_speed_kmh: avgSpeedKmh,
           notes: notes || null,
           is_live: isLive,
           vehicle_id: mode === "taxi" && vehicleId ? vehicleId : null,
