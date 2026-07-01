@@ -84,7 +84,9 @@ const ADV_SET = new Set<SubMode>(["jetski", "atv", "skateboard", "gondola"]);
 
 function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [tab, setTab] = useState<Tab>("all");
+  const [vehicleFilter, setVehicleFilter] = useState<string>("");
   const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
 
   useEffect(() => {
@@ -93,6 +95,11 @@ function JourneyMapPage() {
       .select("*")
       .order("start_time", { ascending: false })
       .then(({ data }) => setTrips(data ?? []));
+    supabase
+      .from("vehicles")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setVehicles(data ?? []));
   }, []);
 
   const enriched = useMemo(() => {
@@ -103,12 +110,14 @@ function JourneyMapPage() {
   }, [trips]);
 
   const visible = useMemo(() => {
-    if (tab === "all") return enriched;
-    if (tab === "water") return enriched.filter((x) => x.sub === "ferry");
-    if (tab === "rail") return enriched.filter((x) => RAIL_SET.has(x.sub));
-    if (tab === "road") return enriched.filter((x) => x.sub === "taxi");
-    return enriched.filter((x) => ADV_SET.has(x.sub));
-  }, [enriched, tab]);
+    let list = enriched;
+    if (tab === "water") list = list.filter((x) => x.sub === "ferry");
+    else if (tab === "rail") list = list.filter((x) => RAIL_SET.has(x.sub));
+    else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
+    else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
+    if (vehicleFilter) list = list.filter((x) => x.trip.vehicle_id === vehicleFilter);
+    return list;
+  }, [enriched, tab, vehicleFilter]);
 
   const allPoints = useMemo(() => visible.flatMap((x) => x.path), [visible]);
 
