@@ -260,7 +260,6 @@ export type Database = {
       }
       trips: {
         Row: {
-          avg_speed_kmh: number | null
           created_at: string
           destination: string
           destination_lat: number | null
@@ -270,7 +269,6 @@ export type Database = {
           end_time: string | null
           id: string
           is_live: boolean
-          max_speed_kmh: number | null
           mode: Database["public"]["Enums"]["transit_mode"]
           notes: string | null
           origin: string
@@ -285,7 +283,6 @@ export type Database = {
           vehicle_id: string | null
         }
         Insert: {
-          avg_speed_kmh?: number | null
           created_at?: string
           destination: string
           destination_lat?: number | null
@@ -295,7 +292,6 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_live?: boolean
-          max_speed_kmh?: number | null
           mode?: Database["public"]["Enums"]["transit_mode"]
           notes?: string | null
           origin: string
@@ -310,7 +306,6 @@ export type Database = {
           vehicle_id?: string | null
         }
         Update: {
-          avg_speed_kmh?: number | null
           created_at?: string
           destination?: string
           destination_lat?: number | null
@@ -320,7 +315,6 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_live?: boolean
-          max_speed_kmh?: number | null
           mode?: Database["public"]["Enums"]["transit_mode"]
           notes?: string | null
           origin?: string

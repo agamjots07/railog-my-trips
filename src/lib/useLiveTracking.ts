@@ -36,8 +36,6 @@ export function useLiveTracking(opts: {
   const dirtyRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
-  const maxSpeedRef = useRef<number>(0);
-  const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
     pathRef.current = initialPath;
@@ -97,24 +95,17 @@ export function useLiveTracking(opts: {
     }
 
     setTracking(true);
-    if (startedAtRef.current == null) startedAtRef.current = Date.now();
     const id = navigator.geolocation.watchPosition(
       (pos) => {
         const pt: LatLng = [pos.coords.latitude, pos.coords.longitude];
         const last = pathRef.current[pathRef.current.length - 1];
         const now = pos.timestamp || Date.now();
         // speed: prefer device-provided (m/s), fall back to derived
-        let s: number | null = null;
         if (typeof pos.coords.speed === "number" && pos.coords.speed >= 0) {
-          s = pos.coords.speed * 3.6;
+          setSpeedKmh(pos.coords.speed * 3.6);
         } else if (last && lastFixTimeRef.current) {
           const dt = (now - lastFixTimeRef.current) / 1000;
-          if (dt > 0) s = (distM(last, pt) / dt) * 3.6;
-        }
-        if (s != null) {
-          setSpeedKmh(s);
-          // Ignore GPS jitter spikes (>400 km/h is not a real vehicle)
-          if (s > maxSpeedRef.current && s < 400) maxSpeedRef.current = s;
+          if (dt > 0) setSpeedKmh((distM(last, pt) / dt) * 3.6);
         }
         lastFixTimeRef.current = now;
         if (!last || distM(last, pt) >= MIN_MOVE_M) {
@@ -165,18 +156,6 @@ export function useLiveTracking(opts: {
     const finalPath = pathRef.current;
     const km = totalKm(finalPath);
     const endIso = new Date().toISOString();
-    // Fetch start_time to compute avg speed
-    const { data: existing } = await supabase
-      .from("trips")
-      .select("start_time")
-      .eq("id", tripId)
-      .maybeSingle();
-    const startMs = existing?.start_time
-      ? new Date(existing.start_time).getTime()
-      : startedAtRef.current ?? Date.now();
-    const hours = Math.max(0, (new Date(endIso).getTime() - startMs) / 3_600_000);
-    const avg = hours > 0 ? km / hours : null;
-    const maxS = maxSpeedRef.current > 0 ? maxSpeedRef.current : null;
     const { error: e } = await supabase
       .from("trips")
       .update({
@@ -184,8 +163,6 @@ export function useLiveTracking(opts: {
         distance_km: km,
         end_time: endIso,
         is_live: false,
-        avg_speed_kmh: avg,
-        max_speed_kmh: maxS,
       })
       .eq("id", tripId);
     if (e) throw e;

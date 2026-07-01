@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3, Car, Gauge } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3 } from "lucide-react";
 import {
   ACHIEVEMENTS,
   bestStreak,
@@ -22,11 +22,9 @@ type Trip = Tables<"trips">;
 
 function StatsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
-  const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
-    supabase.from("vehicles").select("*").then(({ data }) => setVehicles(data ?? []));
   }, []);
 
   const stats = useMemo(() => {
@@ -42,39 +40,6 @@ function StatsPage() {
       routes.set(key, (routes.get(key) ?? 0) + 1);
     }
     const top = [...routes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-    // Road-trip specific stats
-    const roadTrips = trips.filter((t) => t.mode === "taxi");
-    const roadRoutes = new Map<string, number>();
-    const roadVehicles = new Map<string, number>();
-    let roadMin = 0;
-    let longest: { trip: Trip; km: number } | null = null;
-    let fastest: { trip: Trip; kmh: number } | null = null;
-    for (const t of roadTrips) {
-      const key = t.route_name || `${t.origin} → ${t.destination}`;
-      roadRoutes.set(key, (roadRoutes.get(key) ?? 0) + 1);
-      if (t.vehicle_id) roadVehicles.set(t.vehicle_id, (roadVehicles.get(t.vehicle_id) ?? 0) + 1);
-      if (t.end_time) {
-        roadMin += (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
-      }
-      if (t.distance_km != null && (!longest || t.distance_km > longest.km)) {
-        longest = { trip: t, km: t.distance_km };
-      }
-      // avg speed: stored or derived
-      let kmh: number | null = t.avg_speed_kmh ?? null;
-      if (kmh == null && t.distance_km != null && t.end_time) {
-        const hrs = (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 3_600_000;
-        if (hrs > 0) kmh = t.distance_km / hrs;
-      }
-      // max speed always beats avg for "fastest"
-      const speedForRecord = t.max_speed_kmh ?? kmh;
-      if (speedForRecord != null && (!fastest || speedForRecord > fastest.kmh)) {
-        fastest = { trip: t, kmh: speedForRecord };
-      }
-    }
-    const topRoadRoute = [...roadRoutes.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
-    const topVehicleEntry = [...roadVehicles.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
-
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
       total: trips.length, top,
@@ -83,15 +48,6 @@ function StatsPage() {
       best: bestStreak(trips),
       earned: earnedAchievements(trips),
       comparisons: distanceComparisons(totalKm),
-      road: {
-        count: roadTrips.length,
-        totalMin: roadMin,
-        topRoute: topRoadRoute,
-        topVehicleId: topVehicleEntry?.[0] ?? null,
-        topVehicleCount: topVehicleEntry?.[1] ?? 0,
-        longest,
-        fastest,
-      },
     };
   }, [trips]);
 
@@ -259,60 +215,6 @@ function StatsPage() {
         <ModeBar icon={Ship} label="Ferry" count={stats.ferry} km={stats.ferryKm} total={stats.total} gradient="var(--gradient-ferry)" />
       </div>
 
-      {/* Road stats */}
-      {stats.road.count > 0 && (() => {
-        const r = stats.road;
-        const topVehicle = r.topVehicleId ? vehicles.find((v) => v.id === r.topVehicleId) : null;
-        const topVehicleLabel = topVehicle
-          ? `${topVehicle.name}${topVehicle.make || topVehicle.model ? ` · ${[topVehicle.make, topVehicle.model].filter(Boolean).join(" ")}` : ""}`
-          : "—";
-        return (
-          <>
-            <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
-              <Car className="h-3.5 w-3.5" /> Road stats
-            </h2>
-            <div
-              className="rounded-3xl border border-white/[0.06] bg-card p-5"
-              style={{ boxShadow: "var(--shadow-card)" }}
-            >
-              <RoadRow
-                icon={RouteIcon}
-                label="Most frequent route"
-                value={r.topRoute ? r.topRoute[0] : "—"}
-                sub={r.topRoute ? `×${r.topRoute[1]}` : undefined}
-              />
-              <div className="my-3 h-px bg-white/[0.05]" />
-              <RoadRow
-                icon={Car}
-                label="Most used vehicle"
-                value={topVehicleLabel}
-                sub={r.topVehicleId ? `${r.topVehicleCount} ${r.topVehicleCount === 1 ? "trip" : "trips"}` : undefined}
-              />
-              <div className="my-3 h-px bg-white/[0.05]" />
-              <RoadRow
-                icon={Clock}
-                label="Total time as passenger"
-                value={fmtH(r.totalMin)}
-              />
-              <div className="my-3 h-px bg-white/[0.05]" />
-              <RoadRow
-                icon={MapPin}
-                label="Longest trip"
-                value={r.longest ? `${r.longest.km.toFixed(r.longest.km < 10 ? 2 : 0)} km` : "—"}
-                sub={r.longest ? (r.longest.trip.route_name || `${r.longest.trip.origin} → ${r.longest.trip.destination}`) : undefined}
-              />
-              <div className="my-3 h-px bg-white/[0.05]" />
-              <RoadRow
-                icon={Gauge}
-                label="Fastest ride"
-                value={r.fastest ? `${Math.round(r.fastest.kmh)} km/h` : "—"}
-                sub={r.fastest ? (r.fastest.trip.route_name || `${r.fastest.trip.origin} → ${r.fastest.trip.destination}`) : undefined}
-              />
-            </div>
-          </>
-        );
-      })()}
-
       {/* Achievements */}
       <h2 className="mt-8 mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         <span>Achievements</span>
@@ -392,32 +294,6 @@ function Tile({
       </div>
       <p className="mt-3 font-mono text-3xl font-bold leading-none tabular-nums">{value}</p>
       {sub && <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">{sub}</p>}
-    </div>
-  );
-}
-
-function RoadRow({
-  icon: Icon, label, value, sub,
-}: {
-  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  label: string; value: string; sub?: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-        <Icon className="h-4 w-4" strokeWidth={2.5} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-          {label}
-        </p>
-        <p className="mt-0.5 truncate text-sm font-bold">{value}</p>
-      </div>
-      {sub && (
-        <span className="rounded-full bg-white/[0.06] px-2.5 py-1 font-mono text-[11px] font-bold text-muted-foreground">
-          {sub}
-        </span>
-      )}
     </div>
   );
 }

@@ -204,7 +204,7 @@ function TripDetail() {
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
-      {isLive ? (
+      {isLive && (
         <div
           className="mt-5 flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-card p-5"
           style={{ boxShadow: "var(--shadow-card)" }}
@@ -225,58 +225,7 @@ function TripDetail() {
             </p>
           </div>
         </div>
-      ) : (() => {
-        // Compute avg from distance/duration if not stored, and use stored max if available.
-        const savedAvg = trip.avg_speed_kmh ?? null;
-        const savedMax = trip.max_speed_kmh ?? null;
-        let avg = savedAvg;
-        if (avg == null && trip.distance_km != null && trip.end_time) {
-          const hrs = (new Date(trip.end_time).getTime() - new Date(trip.start_time).getTime()) / 3_600_000;
-          if (hrs > 0) avg = trip.distance_km / hrs;
-        }
-        if (avg == null && savedMax == null) return null;
-        return (
-          <div
-            className="mt-5 grid grid-cols-2 overflow-hidden rounded-3xl border border-white/[0.06] bg-card"
-            style={{ boxShadow: "var(--shadow-card)" }}
-          >
-            <div className="flex items-center gap-3 px-5 py-4">
-              <span
-                className="flex h-11 w-11 items-center justify-center rounded-2xl"
-                style={{ background: `${color}1f` }}
-              >
-                <Gauge className="h-5 w-5" strokeWidth={2.5} style={{ color }} />
-              </span>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-                  Avg speed
-                </p>
-                <p className="mt-1 font-mono text-xl font-bold tabular-nums leading-none">
-                  {avg != null ? Math.round(avg) : "—"}
-                  <span className="ml-1 text-[10px] font-semibold text-muted-foreground">km/h</span>
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 border-l border-white/[0.05] px-5 py-4">
-              <span
-                className="flex h-11 w-11 items-center justify-center rounded-2xl"
-                style={{ background: `${color}1f` }}
-              >
-                <Gauge className="h-5 w-5" strokeWidth={2.5} style={{ color }} />
-              </span>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-                  Top speed
-                </p>
-                <p className="mt-1 font-mono text-xl font-bold tabular-nums leading-none">
-                  {savedMax != null ? Math.round(savedMax) : "—"}
-                  <span className="ml-1 text-[10px] font-semibold text-muted-foreground">km/h</span>
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      )}
 
       {mode === "train" && isGoTrip(trip.origin_osm_id, trip.destination_osm_id) && (
         <GoTrainCard routeName={trip.route_name} />
