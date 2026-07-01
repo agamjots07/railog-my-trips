@@ -396,6 +396,32 @@ function Tile({
   );
 }
 
+function RoadRow({
+  icon: Icon, label, value, sub,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  label: string; value: string; sub?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+        <Icon className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-0.5 truncate text-sm font-bold">{value}</p>
+      </div>
+      {sub && (
+        <span className="rounded-full bg-white/[0.06] px-2.5 py-1 font-mono text-[11px] font-bold text-muted-foreground">
+          {sub}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function ModeBar({
   icon: Icon, label, count, km, total, gradient,
 }: {
