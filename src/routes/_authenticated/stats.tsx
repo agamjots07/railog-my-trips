@@ -22,9 +22,11 @@ type Trip = Tables<"trips">;
 
 function StatsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
+    supabase.from("vehicles").select("*").then(({ data }) => setVehicles(data ?? []));
   }, []);
 
   const stats = useMemo(() => {
@@ -40,6 +42,39 @@ function StatsPage() {
       routes.set(key, (routes.get(key) ?? 0) + 1);
     }
     const top = [...routes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    // Road-trip specific stats
+    const roadTrips = trips.filter((t) => t.mode === "taxi");
+    const roadRoutes = new Map<string, number>();
+    const roadVehicles = new Map<string, number>();
+    let roadMin = 0;
+    let longest: { trip: Trip; km: number } | null = null;
+    let fastest: { trip: Trip; kmh: number } | null = null;
+    for (const t of roadTrips) {
+      const key = t.route_name || `${t.origin} → ${t.destination}`;
+      roadRoutes.set(key, (roadRoutes.get(key) ?? 0) + 1);
+      if (t.vehicle_id) roadVehicles.set(t.vehicle_id, (roadVehicles.get(t.vehicle_id) ?? 0) + 1);
+      if (t.end_time) {
+        roadMin += (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
+      }
+      if (t.distance_km != null && (!longest || t.distance_km > longest.km)) {
+        longest = { trip: t, km: t.distance_km };
+      }
+      // avg speed: stored or derived
+      let kmh: number | null = t.avg_speed_kmh ?? null;
+      if (kmh == null && t.distance_km != null && t.end_time) {
+        const hrs = (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 3_600_000;
+        if (hrs > 0) kmh = t.distance_km / hrs;
+      }
+      // max speed always beats avg for "fastest"
+      const speedForRecord = t.max_speed_kmh ?? kmh;
+      if (speedForRecord != null && (!fastest || speedForRecord > fastest.kmh)) {
+        fastest = { trip: t, kmh: speedForRecord };
+      }
+    }
+    const topRoadRoute = [...roadRoutes.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+    const topVehicleEntry = [...roadVehicles.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
       total: trips.length, top,
@@ -48,6 +83,15 @@ function StatsPage() {
       best: bestStreak(trips),
       earned: earnedAchievements(trips),
       comparisons: distanceComparisons(totalKm),
+      road: {
+        count: roadTrips.length,
+        totalMin: roadMin,
+        topRoute: topRoadRoute,
+        topVehicleId: topVehicleEntry?.[0] ?? null,
+        topVehicleCount: topVehicleEntry?.[1] ?? 0,
+        longest,
+        fastest,
+      },
     };
   }, [trips]);
 
