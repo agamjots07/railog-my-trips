@@ -193,16 +193,16 @@ export function useLiveTracking(opts: {
       } catch { /* ignore */ }
     }
 
-    const patch: Record<string, unknown> = {
+    const patch = {
       route_geometry: finalPath as unknown as never,
       distance_km: km,
       end_time: endIso,
       is_live: false,
       avg_speed_kmh: avg,
       max_speed_kmh: maxS,
+      ...(originLabel ? { origin: originLabel } : {}),
+      ...(destLabel ? { destination: destLabel } : {}),
     };
-    if (originLabel) patch.origin = originLabel;
-    if (destLabel) patch.destination = destLabel;
 
     const { error: e } = await supabase.from("trips").update(patch).eq("id", tripId);
     if (e) throw e;
