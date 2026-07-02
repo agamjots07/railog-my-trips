@@ -151,13 +151,25 @@ function GaragePage() {
                     {[v.year, v.make, v.model].filter(Boolean).join(" ") || "—"}
                   </p>
                 </div>
-                <button
-                  onClick={() => remove(v.id)}
-                  className="text-muted-foreground transition hover:text-destructive"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditing(v);
+                    }}
+                    className="rounded-full p-1.5 text-muted-foreground transition hover:bg-white/[0.05] hover:text-foreground"
+                    aria-label="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => remove(v.id)}
+                    className="rounded-full p-1.5 text-muted-foreground transition hover:bg-white/[0.05] hover:text-destructive"
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="mt-4 flex items-center gap-5 border-t border-white/[0.05] pt-3.5">
                 <div className="flex flex-col gap-0.5">
