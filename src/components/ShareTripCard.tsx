@@ -91,7 +91,7 @@ export function ShareTripCard({
   const title = useMemo(() => {
     if (mode === "taxi") {
       if (vehicle?.name) return vehicle.name;
-      return "Road";
+      return "Drive";
     }
     if (trip.route_name) return trip.route_name;
     return `${trip.origin} → ${trip.destination}`;
@@ -289,7 +289,7 @@ export function ShareTripCard({
                   style={{ background: `${color}25`, color }}
                 >
                   <Icon className="h-3 w-3" strokeWidth={3} />
-                  {mode === "taxi" ? "Road" : (MODE_LABEL[mode] ?? mode)}
+                  {MODE_LABEL[mode] ?? mode}
                 </div>
               </div>
 

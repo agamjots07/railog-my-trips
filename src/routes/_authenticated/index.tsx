@@ -90,7 +90,7 @@ function FeedPage() {
           icon={Train}
           eyebrow="Your journey starts here"
           title="No trips yet"
-          body="Log your first train, ferry, taxi or adventure — and watch your travel timeline come to life."
+          body="Log your first train, ferry, drive or adventure — and watch your travel timeline come to life."
           ctaLabel="Log your first trip"
           ctaTo="/new"
         />
