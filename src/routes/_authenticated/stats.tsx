@@ -125,7 +125,7 @@ function StatsPage() {
         fastest,
       },
     };
-  }, [trips]);
+  }, [trips, roadLabels]);
 
   if (trips && trips.length === 0) {
     return (
