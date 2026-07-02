@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { ChevronLeft, Plus, Trash2, Car, Search, ChevronDown, X } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Car, Search, ChevronDown, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { CAR_MAKES, CAR_YEARS } from "@/lib/carDatabase";
 
@@ -26,6 +26,7 @@ function GaragePage() {
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Vehicle | null>(null);
 
   const load = async () => {
     const [{ data: v }, { data: t }] = await Promise.all([
@@ -86,7 +87,10 @@ function GaragePage() {
           </h1>
         </div>
         <button
-          onClick={() => setShowForm((s) => !s)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm((s) => !s);
+          }}
           className="flex h-11 w-11 items-center justify-center rounded-full text-primary-foreground"
           style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
           aria-label="Add vehicle"
@@ -95,10 +99,17 @@ function GaragePage() {
         </button>
       </div>
 
-      {showForm && (
+      {(showForm || editing) && (
         <VehicleForm
+          key={editing?.id ?? "new"}
+          initial={editing}
+          onCancel={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
           onSaved={() => {
             setShowForm(false);
+            setEditing(null);
             load();
           }}
         />
