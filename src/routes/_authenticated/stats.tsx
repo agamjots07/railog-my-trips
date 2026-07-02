@@ -11,6 +11,7 @@ import {
 } from "@/lib/achievements";
 import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
+import { reverseGeocode } from "@/lib/reverseGeocode";
 import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/stats")({
@@ -23,11 +24,39 @@ type Trip = Tables<"trips">;
 function StatsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
+  const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
     supabase.from("vehicles").select("*").then(({ data }) => setVehicles(data ?? []));
   }, []);
+
+  // For road trips missing meaningful origin/destination, reverse-geocode
+  // the first & last GPS point so "most frequent route" shows real city names.
+  useEffect(() => {
+    if (!trips) return;
+    let cancelled = false;
+    (async () => {
+      const generic = new Set(["Live start", "Live", "", null, undefined]);
+      const next: Record<string, { o: string; d: string }> = {};
+      for (const t of trips) {
+        if (t.mode !== "taxi") continue;
+        if (!generic.has(t.origin as string) && !generic.has(t.destination as string)) continue;
+        const geo = t.route_geometry as unknown as [number, number][] | null;
+        if (!geo || geo.length < 2) continue;
+        try {
+          const o = await reverseGeocode(geo[0]);
+          const d = await reverseGeocode(geo[geo.length - 1]);
+          if (o && d) next[t.id] = { o, d };
+        } catch { /* skip */ }
+        if (cancelled) return;
+      }
+      if (!cancelled && Object.keys(next).length > 0) {
+        setRoadLabels((prev) => ({ ...prev, ...next }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [trips]);
 
   const stats = useMemo(() => {
     if (!trips) return null;
@@ -51,7 +80,10 @@ function StatsPage() {
     let longest: { trip: Trip; km: number } | null = null;
     let fastest: { trip: Trip; kmh: number } | null = null;
     for (const t of roadTrips) {
-      const key = t.route_name || `${t.origin} → ${t.destination}`;
+      const resolved = roadLabels[t.id];
+      const key = resolved
+        ? `${resolved.o} → ${resolved.d}`
+        : (t.route_name || `${t.origin} → ${t.destination}`);
       roadRoutes.set(key, (roadRoutes.get(key) ?? 0) + 1);
       if (t.vehicle_id) roadVehicles.set(t.vehicle_id, (roadVehicles.get(t.vehicle_id) ?? 0) + 1);
       if (t.end_time) {
