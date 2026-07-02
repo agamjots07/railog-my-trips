@@ -196,30 +196,41 @@ function GaragePage() {
   );
 }
 
-function VehicleForm({ onSaved }: { onSaved: () => void }) {
+function VehicleForm({
+  initial,
+  onSaved,
+  onCancel,
+}: {
+  initial?: Vehicle | null;
+  onSaved: () => void;
+  onCancel?: () => void;
+}) {
   const { user } = useAuth();
-  const [name, setName] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState<number | "">("");
-  const [color, setColor] = useState(COLOR_SWATCHES[0]);
+  const editing = !!initial;
+  const [name, setName] = useState(initial?.name ?? "");
+  const [make, setMake] = useState(initial?.make ?? "");
+  const [model, setModel] = useState(initial?.model ?? "");
+  const [year, setYear] = useState<number | "">(initial?.year ?? "");
+  const [color, setColor] = useState(initial?.color ?? COLOR_SWATCHES[0]);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setBusy(true);
-    const { error } = await supabase.from("vehicles").insert({
-      user_id: user.id,
+    const payload = {
       name: name || [year, make, model].filter(Boolean).join(" ") || "My Vehicle",
       make: make || null,
       model: model || null,
       year: year === "" ? null : year,
       color,
-    });
+    };
+    const { error } = editing
+      ? await supabase.from("vehicles").update(payload).eq("id", initial!.id)
+      : await supabase.from("vehicles").insert({ user_id: user.id, ...payload });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Vehicle added");
+    toast.success(editing ? "Vehicle updated" : "Vehicle added");
     onSaved();
   };
 
@@ -288,14 +299,25 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
           ))}
         </div>
       </Field>
-      <button
-        type="submit"
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
-        style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-      >
-        {busy ? "Saving…" : "Add to garage"}
-      </button>
+      <div className="flex items-center gap-3">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-2xl border border-white/[0.08] px-5 py-3.5 text-sm font-bold text-muted-foreground transition hover:text-foreground"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
+        >
+          {busy ? "Saving…" : editing ? "Save changes" : "Add to garage"}
+        </button>
+      </div>
     </form>
   );
 }
