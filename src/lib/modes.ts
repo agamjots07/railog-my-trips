@@ -16,7 +16,7 @@ export const ADVENTURE_SUBTYPES: TripMode[] = ["jetski", "atv", "skateboard", "g
 export const MODE_LABEL: Record<TripMode, string> = {
   train: "Train",
   ferry: "Ferry",
-  taxi: "Taxi / Uber",
+  taxi: "Drive",
   jetski: "Jet Ski",
   atv: "ATV",
   skateboard: "Skateboard",

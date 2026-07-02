@@ -49,8 +49,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   },
   {
     id: "first_taxi",
-    title: "Hailed It",
-    description: "Your first taxi or rideshare trip.",
+    title: "Hit the Road",
+    description: "Your first Drive trip logged.",
     icon: Zap,
     color: "#fb923c",
     earned: (t) => t.some((x) => x.mode === "taxi"),

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { ChevronLeft, Plus, Trash2, Car, Search, ChevronDown, X } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Car, Search, ChevronDown, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { CAR_MAKES, CAR_YEARS } from "@/lib/carDatabase";
 
@@ -26,6 +26,7 @@ function GaragePage() {
   const [vehicles, setVehicles] = useState<Vehicle[] | null>(null);
   const [trips, setTrips] = useState<Trip[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Vehicle | null>(null);
 
   const load = async () => {
     const [{ data: v }, { data: t }] = await Promise.all([
@@ -86,7 +87,10 @@ function GaragePage() {
           </h1>
         </div>
         <button
-          onClick={() => setShowForm((s) => !s)}
+          onClick={() => {
+            setEditing(null);
+            setShowForm((s) => !s);
+          }}
           className="flex h-11 w-11 items-center justify-center rounded-full text-primary-foreground"
           style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
           aria-label="Add vehicle"
@@ -95,10 +99,17 @@ function GaragePage() {
         </button>
       </div>
 
-      {showForm && (
+      {(showForm || editing) && (
         <VehicleForm
+          key={editing?.id ?? "new"}
+          initial={editing}
+          onCancel={() => {
+            setShowForm(false);
+            setEditing(null);
+          }}
           onSaved={() => {
             setShowForm(false);
+            setEditing(null);
             load();
           }}
         />
@@ -115,7 +126,7 @@ function GaragePage() {
             </div>
             <p className="text-sm font-bold">No vehicles yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add one to attach it to Taxi / Uber rides.
+              Add one to attach it to Drive trips.
             </p>
           </div>
         )}
@@ -140,13 +151,25 @@ function GaragePage() {
                     {[v.year, v.make, v.model].filter(Boolean).join(" ") || "—"}
                   </p>
                 </div>
-                <button
-                  onClick={() => remove(v.id)}
-                  className="text-muted-foreground transition hover:text-destructive"
-                  aria-label="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditing(v);
+                    }}
+                    className="rounded-full p-1.5 text-muted-foreground transition hover:bg-white/[0.05] hover:text-foreground"
+                    aria-label="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => remove(v.id)}
+                    className="rounded-full p-1.5 text-muted-foreground transition hover:bg-white/[0.05] hover:text-destructive"
+                    aria-label="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
               <div className="mt-4 flex items-center gap-5 border-t border-white/[0.05] pt-3.5">
                 <div className="flex flex-col gap-0.5">
@@ -173,30 +196,41 @@ function GaragePage() {
   );
 }
 
-function VehicleForm({ onSaved }: { onSaved: () => void }) {
+function VehicleForm({
+  initial,
+  onSaved,
+  onCancel,
+}: {
+  initial?: Vehicle | null;
+  onSaved: () => void;
+  onCancel?: () => void;
+}) {
   const { user } = useAuth();
-  const [name, setName] = useState("");
-  const [make, setMake] = useState("");
-  const [model, setModel] = useState("");
-  const [year, setYear] = useState<number | "">("");
-  const [color, setColor] = useState(COLOR_SWATCHES[0]);
+  const editing = !!initial;
+  const [name, setName] = useState(initial?.name ?? "");
+  const [make, setMake] = useState(initial?.make ?? "");
+  const [model, setModel] = useState(initial?.model ?? "");
+  const [year, setYear] = useState<number | "">(initial?.year ?? "");
+  const [color, setColor] = useState(initial?.color ?? COLOR_SWATCHES[0]);
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setBusy(true);
-    const { error } = await supabase.from("vehicles").insert({
-      user_id: user.id,
+    const payload = {
       name: name || [year, make, model].filter(Boolean).join(" ") || "My Vehicle",
       make: make || null,
       model: model || null,
       year: year === "" ? null : year,
       color,
-    });
+    };
+    const { error } = editing
+      ? await supabase.from("vehicles").update(payload).eq("id", initial!.id)
+      : await supabase.from("vehicles").insert({ user_id: user.id, ...payload });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Vehicle added");
+    toast.success(editing ? "Vehicle updated" : "Vehicle added");
     onSaved();
   };
 
@@ -265,14 +299,25 @@ function VehicleForm({ onSaved }: { onSaved: () => void }) {
           ))}
         </div>
       </Field>
-      <button
-        type="submit"
-        disabled={busy}
-        className="flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
-        style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
-      >
-        {busy ? "Saving…" : "Add to garage"}
-      </button>
+      <div className="flex items-center gap-3">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-2xl border border-white/[0.08] px-5 py-3.5 text-sm font-bold text-muted-foreground transition hover:text-foreground"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+          style={{ background: "var(--gradient-primary)", boxShadow: "var(--shadow-glow)" }}
+        >
+          {busy ? "Saving…" : editing ? "Save changes" : "Add to garage"}
+        </button>
+      </div>
     </form>
   );
 }

@@ -10,7 +10,7 @@ const SLIDES = [
     color: "#a78bfa",
     eyebrow: "Welcome to Pencer",
     title: "Every journey,\nlogged beautifully.",
-    body: "Track every train, ferry, taxi and adventure you take — in one elegant timeline.",
+    body: "Track every train, ferry, drive and adventure you take — in one elegant timeline.",
   },
   {
     icon: Map,
@@ -31,7 +31,7 @@ const SLIDES = [
     color: "#ec4899",
     eyebrow: "Ready when you are",
     title: "Let's log your\nfirst trip.",
-    body: "Train, ferry, taxi, jet ski — anything goes. Your journey starts now.",
+    body: "Train, ferry, drive, jet ski — anything goes. Your journey starts now.",
   },
 ];
 

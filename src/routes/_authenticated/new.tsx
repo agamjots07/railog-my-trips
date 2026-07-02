@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/new")({
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: "train", label: "Train" },
   { value: "ferry", label: "Ferry" },
-  { value: "taxi", label: "Taxi" },
+  { value: "taxi", label: "Drive" },
   { value: "adventure", label: "Adventure" },
 ];
 
