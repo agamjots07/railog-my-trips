@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { haversineKm } from "@/lib/geo";
+import { reverseGeocode } from "@/lib/reverseGeocode";
 
 type LatLng = [number, number];
 
@@ -177,17 +178,33 @@ export function useLiveTracking(opts: {
     const hours = Math.max(0, (new Date(endIso).getTime() - startMs) / 3_600_000);
     const avg = hours > 0 ? km / hours : null;
     const maxS = maxSpeedRef.current > 0 ? maxSpeedRef.current : null;
-    const { error: e } = await supabase
-      .from("trips")
-      .update({
-        route_geometry: finalPath as unknown as never,
-        distance_km: km,
-        end_time: endIso,
-        is_live: false,
-        avg_speed_kmh: avg,
-        max_speed_kmh: maxS,
-      })
-      .eq("id", tripId);
+
+    // Reverse-geocode start/end so road trips show real origin → destination.
+    let originLabel: string | null = null;
+    let destLabel: string | null = null;
+    if (finalPath.length > 0) {
+      const first = finalPath[0];
+      const last = finalPath[finalPath.length - 1];
+      try {
+        originLabel = await reverseGeocode(first);
+      } catch { /* ignore */ }
+      try {
+        destLabel = await reverseGeocode(last);
+      } catch { /* ignore */ }
+    }
+
+    const patch: Record<string, unknown> = {
+      route_geometry: finalPath as unknown as never,
+      distance_km: km,
+      end_time: endIso,
+      is_live: false,
+      avg_speed_kmh: avg,
+      max_speed_kmh: maxS,
+    };
+    if (originLabel) patch.origin = originLabel;
+    if (destLabel) patch.destination = destLabel;
+
+    const { error: e } = await supabase.from("trips").update(patch).eq("id", tripId);
     if (e) throw e;
     return { path: finalPath, distance_km: km, end_time: endIso };
   };
