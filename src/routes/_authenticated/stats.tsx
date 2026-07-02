@@ -311,7 +311,7 @@ function StatsPage() {
                 icon={RouteIcon}
                 label="Most frequent route"
                 value={r.topRoute ? r.topRoute[0] : "—"}
-                sub={r.topRoute ? `×${r.topRoute[1]}` : undefined}
+                sub={r.topRoute ? `${r.topRoute[1]} ${r.topRoute[1] === 1 ? "time" : "times"}` : undefined}
               />
               <div className="my-3 h-px bg-white/[0.05]" />
               <RoadRow
