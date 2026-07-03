@@ -218,6 +218,7 @@ function StatsPage() {
         nightRides,
         cities: [...citiesSet].sort(),
         busiestDay,
+        dayCounts,
       },
     };
   }, [trips, roadLabels, roadDetails]);
