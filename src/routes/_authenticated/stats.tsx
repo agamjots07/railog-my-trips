@@ -48,7 +48,15 @@ function StatsPage() {
         try {
           const o = await reverseGeocode(geo[0]);
           const d = await reverseGeocode(geo[geo.length - 1]);
-          if (o && d) next[t.id] = { o, d };
+          if (o && d) {
+            next[t.id] = { o, d };
+            // Persist so trip history, top routes, and other pages
+            // display real place names too.
+            await supabase
+              .from("trips")
+              .update({ origin: o, destination: d })
+              .eq("id", t.id);
+          }
         } catch { /* skip */ }
         if (cancelled) return;
       }
