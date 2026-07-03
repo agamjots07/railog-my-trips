@@ -26,6 +26,7 @@ function StatsPage() {
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
   const [roadDetails, setRoadDetails] = useState<Record<string, { roads: string[]; cities: string[] }>>({});
+  const [busiestExpanded, setBusiestExpanded] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
