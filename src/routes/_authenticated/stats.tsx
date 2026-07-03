@@ -169,14 +169,15 @@ function StatsPage() {
       if (h >= 22 || h < 5) nightRides++;
       dayCounts[d.getDay()]++;
     }
-    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    let busiestDay: { name: string; count: number } | null = null;
+    const DAY_NAMES: readonly string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let busiestIdx = -1;
+    let busiestMax = 0;
     for (let i = 0; i < 7; i++) {
-      if (!busiestDay || dayCounts[i] > busiestDay.count) {
-        busiestDay = { name: DAY_NAMES[i], count: dayCounts[i] };
-      }
+      const c = dayCounts[i] ?? 0;
+      if (c > busiestMax) { busiestMax = c; busiestIdx = i; }
     }
-    if (busiestDay !== null && busiestDay.count === 0) busiestDay = null;
+    const busiestDay: { name: string; count: number } | null =
+      busiestIdx >= 0 ? { name: DAY_NAMES[busiestIdx] ?? "", count: busiestMax } : null;
 
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
