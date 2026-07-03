@@ -62,6 +62,17 @@ function StatsPage() {
       }
       if (!cancelled && Object.keys(next).length > 0) {
         setRoadLabels((prev) => ({ ...prev, ...next }));
+        // Optimistically update in-memory trips so top routes reflect
+        // the resolved names without a refetch.
+        setTrips((prev) =>
+          prev
+            ? prev.map((t) =>
+                next[t.id]
+                  ? { ...t, origin: next[t.id].o, destination: next[t.id].d }
+                  : t,
+              )
+            : prev,
+        );
       }
     })();
     return () => { cancelled = true; };
