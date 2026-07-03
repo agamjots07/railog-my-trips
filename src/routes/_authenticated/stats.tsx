@@ -452,12 +452,52 @@ function StatsPage() {
                 sub={r.nightRides > 0 ? "after 10pm" : undefined}
               />
               <div className="my-3 h-px bg-white/[0.05]" />
-              <RoadRow
-                icon={CalendarDays}
-                label="Busiest day"
-                value={r.busiestDay ? r.busiestDay.name : "—"}
-                sub={r.busiestDay ? `${r.busiestDay.count} ${r.busiestDay.count === 1 ? "trip" : "trips"}` : undefined}
-              />
+              <button
+                type="button"
+                onClick={() => setBusiestExpanded((v) => !v)}
+                className="w-full text-left"
+              >
+                <RoadRow
+                  icon={CalendarDays}
+                  label="Busiest day"
+                  value={r.busiestDay ? r.busiestDay.name : "—"}
+                  sub={r.busiestDay ? `${r.busiestDay.count} ${r.busiestDay.count === 1 ? "trip" : "trips"}` : undefined}
+                />
+              </button>
+              {busiestExpanded && r.busiestDay && (
+                <div className="mt-3 rounded-2xl bg-white/[0.03] p-4">
+                  <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                    Drives by day of week
+                  </p>
+                  <div className="flex items-end justify-between gap-2 h-32">
+                    {["S", "M", "T", "W", "T", "F", "S"].map((initial, i) => {
+                      const count = r.dayCounts[i] ?? 0;
+                      const max = Math.max(...r.dayCounts, 1);
+                      const pct = (count / max) * 100;
+                      const isTop = count > 0 && count === r.busiestDay!.count;
+                      return (
+                        <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
+                          <span className="font-mono text-[10px] font-bold tabular-nums text-muted-foreground">
+                            {count}
+                          </span>
+                          <div className="flex w-full flex-1 items-end">
+                            <div
+                              className="w-full rounded-t-md transition-all"
+                              style={{
+                                height: `${Math.max(pct, count > 0 ? 6 : 0)}%`,
+                                background: isTop ? "var(--gradient-primary)" : "rgba(255,255,255,0.12)",
+                              }}
+                            />
+                          </div>
+                          <span className={`text-[10px] font-bold ${isTop ? "text-primary" : "text-muted-foreground"}`}>
+                            {initial}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               {r.cities.length > 0 && (
                 <>
                   <div className="my-3 h-px bg-white/[0.05]" />
