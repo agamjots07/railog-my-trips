@@ -25,6 +25,7 @@ function StatsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
+  const [roadDetails, setRoadDetails] = useState<Record<string, { roads: string[]; cities: string[] }>>({});
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
@@ -56,6 +57,44 @@ function StatsPage() {
       }
     })();
     return () => { cancelled = true; };
+  }, [trips]);
+
+  // Sample GPS points along each Drive trip to collect road names + cities
+  // for "Most travelled road" and "Cities visited by car".
+  useEffect(() => {
+    if (!trips) return;
+    let cancelled = false;
+    (async () => {
+      const roadTrips = trips.filter((t) => t.mode === "taxi");
+      for (const t of roadTrips) {
+        if (roadDetails[t.id]) continue;
+        const geo = t.route_geometry as unknown as [number, number][] | null;
+        if (!geo || geo.length < 2) continue;
+        // Sample up to 5 points along the geometry.
+        const samples: [number, number][] = [];
+        const N = Math.min(5, geo.length);
+        for (let i = 0; i < N; i++) {
+          const idx = Math.floor((i / Math.max(1, N - 1)) * (geo.length - 1));
+          samples.push(geo[idx]);
+        }
+        const roads = new Set<string>();
+        const cities = new Set<string>();
+        for (const p of samples) {
+          const d = await reverseGeocodeDetail(p);
+          if (cancelled) return;
+          if (d?.road) roads.add(d.road);
+          if (d?.city) cities.add(d.city);
+          await new Promise((r) => setTimeout(r, 250)); // gentle rate-limit
+        }
+        if (cancelled) return;
+        setRoadDetails((prev) => ({
+          ...prev,
+          [t.id]: { roads: [...roads], cities: [...cities] },
+        }));
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trips]);
 
   const stats = useMemo(() => {
