@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3, Car, Gauge } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3, Car, Gauge, Moon, Building2, CalendarDays } from "lucide-react";
 import {
   ACHIEVEMENTS,
   bestStreak,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/achievements";
 import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
-import { reverseGeocode } from "@/lib/reverseGeocode";
+import { reverseGeocode, reverseGeocodeDetail } from "@/lib/reverseGeocode";
 import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/_authenticated/stats")({
@@ -25,6 +25,7 @@ function StatsPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
+  const [roadDetails, setRoadDetails] = useState<Record<string, { roads: string[]; cities: string[] }>>({});
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
@@ -56,6 +57,44 @@ function StatsPage() {
       }
     })();
     return () => { cancelled = true; };
+  }, [trips]);
+
+  // Sample GPS points along each Drive trip to collect road names + cities
+  // for "Most travelled road" and "Cities visited by car".
+  useEffect(() => {
+    if (!trips) return;
+    let cancelled = false;
+    (async () => {
+      const roadTrips = trips.filter((t) => t.mode === "taxi");
+      for (const t of roadTrips) {
+        if (roadDetails[t.id]) continue;
+        const geo = t.route_geometry as unknown as [number, number][] | null;
+        if (!geo || geo.length < 2) continue;
+        // Sample up to 5 points along the geometry.
+        const samples: [number, number][] = [];
+        const N = Math.min(5, geo.length);
+        for (let i = 0; i < N; i++) {
+          const idx = Math.floor((i / Math.max(1, N - 1)) * (geo.length - 1));
+          samples.push(geo[idx]);
+        }
+        const roads = new Set<string>();
+        const cities = new Set<string>();
+        for (const p of samples) {
+          const d = await reverseGeocodeDetail(p);
+          if (cancelled) return;
+          if (d?.road) roads.add(d.road);
+          if (d?.city) cities.add(d.city);
+          await new Promise((r) => setTimeout(r, 250)); // gentle rate-limit
+        }
+        if (cancelled) return;
+        setRoadDetails((prev) => ({
+          ...prev,
+          [t.id]: { roads: [...roads], cities: [...cities] },
+        }));
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trips]);
 
   const stats = useMemo(() => {
@@ -107,6 +146,39 @@ function StatsPage() {
     const topRoadRoute = [...roadRoutes.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
     const topVehicleEntry = [...roadVehicles.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
 
+    // New Road insights
+    // 1) Most travelled road — aggregate road names across all Drive trips.
+    const roadNameCounts = new Map<string, number>();
+    // 2) Cities visited by car — unique across Drive trips.
+    const citiesSet = new Set<string>();
+    for (const t of roadTrips) {
+      const d = roadDetails[t.id];
+      if (!d) continue;
+      for (const r of d.roads) roadNameCounts.set(r, (roadNameCounts.get(r) ?? 0) + 1);
+      for (const c of d.cities) citiesSet.add(c);
+    }
+    const mostTravelledRoad = [...roadNameCounts.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+
+    // 3) Night rides — Drive trips starting between 22:00 and 04:59.
+    let nightRides = 0;
+    // 4) Busiest day of week
+    const dayCounts = new Array<number>(7).fill(0);
+    for (const t of roadTrips) {
+      const d = new Date(t.start_time);
+      const h = d.getHours();
+      if (h >= 22 || h < 5) nightRides++;
+      dayCounts[d.getDay()]++;
+    }
+    const DAY_NAMES: readonly string[] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let busiestIdx = -1;
+    let busiestMax = 0;
+    for (let i = 0; i < 7; i++) {
+      const c = dayCounts[i] ?? 0;
+      if (c > busiestMax) { busiestMax = c; busiestIdx = i; }
+    }
+    const busiestDay: { name: string; count: number } | null =
+      busiestIdx >= 0 ? { name: DAY_NAMES[busiestIdx] ?? "", count: busiestMax } : null;
+
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
       total: trips.length, top,
@@ -123,9 +195,13 @@ function StatsPage() {
         topVehicleCount: topVehicleEntry?.[1] ?? 0,
         longest,
         fastest,
+        mostTravelledRoad,
+        nightRides,
+        cities: [...citiesSet].sort(),
+        busiestDay,
       },
     };
-  }, [trips, roadLabels]);
+  }, [trips, roadLabels, roadDetails]);
 
   if (trips && trips.length === 0) {
     return (
@@ -340,6 +416,52 @@ function StatsPage() {
                 value={r.fastest ? `${Math.round(r.fastest.kmh)} km/h` : "—"}
                 sub={r.fastest ? (r.fastest.trip.route_name || `${r.fastest.trip.origin} → ${r.fastest.trip.destination}`) : undefined}
               />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={RouteIcon}
+                label="Most travelled road"
+                value={r.mostTravelledRoad ? r.mostTravelledRoad[0] : "—"}
+                sub={r.mostTravelledRoad ? `seen on ${r.mostTravelledRoad[1]} ${r.mostTravelledRoad[1] === 1 ? "trip" : "trips"}` : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={Moon}
+                label="Night rides"
+                value={`${r.nightRides}`}
+                sub={r.nightRides > 0 ? "after 10pm" : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={CalendarDays}
+                label="Busiest day"
+                value={r.busiestDay ? r.busiestDay.name : "—"}
+                sub={r.busiestDay ? `${r.busiestDay.count} ${r.busiestDay.count === 1 ? "trip" : "trips"}` : undefined}
+              />
+              {r.cities.length > 0 && (
+                <>
+                  <div className="my-3 h-px bg-white/[0.05]" />
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                      <Building2 className="h-4 w-4" strokeWidth={2.5} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                        Cities visited by car
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {r.cities.map((c) => (
+                          <span
+                            key={c}
+                            className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </>
         );
