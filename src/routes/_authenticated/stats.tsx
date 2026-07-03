@@ -415,6 +415,52 @@ function StatsPage() {
                 value={r.fastest ? `${Math.round(r.fastest.kmh)} km/h` : "—"}
                 sub={r.fastest ? (r.fastest.trip.route_name || `${r.fastest.trip.origin} → ${r.fastest.trip.destination}`) : undefined}
               />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={RouteIcon}
+                label="Most travelled road"
+                value={r.mostTravelledRoad ? r.mostTravelledRoad[0] : "—"}
+                sub={r.mostTravelledRoad ? `seen on ${r.mostTravelledRoad[1]} ${r.mostTravelledRoad[1] === 1 ? "trip" : "trips"}` : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={Moon}
+                label="Night rides"
+                value={`${r.nightRides}`}
+                sub={r.nightRides > 0 ? "after 10pm" : undefined}
+              />
+              <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow
+                icon={CalendarDays}
+                label="Busiest day"
+                value={r.busiestDay ? r.busiestDay.name : "—"}
+                sub={r.busiestDay ? `${r.busiestDay.count} ${r.busiestDay.count === 1 ? "trip" : "trips"}` : undefined}
+              />
+              {r.cities.length > 0 && (
+                <>
+                  <div className="my-3 h-px bg-white/[0.05]" />
+                  <div className="flex items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                      <Building2 className="h-4 w-4" strokeWidth={2.5} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                        Cities visited by car
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {r.cities.map((c) => (
+                          <span
+                            key={c}
+                            className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[11px] font-semibold"
+                          >
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </>
         );
