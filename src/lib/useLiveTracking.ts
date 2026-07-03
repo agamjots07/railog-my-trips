@@ -113,9 +113,14 @@ export function useLiveTracking(opts: {
           if (dt > 0) s = (distM(last, pt) / dt) * 3.6;
         }
         if (s != null) {
-          setSpeedKmh(s);
-          // Ignore GPS jitter spikes (>400 km/h is not a real vehicle)
-          if (s > maxSpeedRef.current && s < 400) maxSpeedRef.current = s;
+          // Cap: GPS occasionally reports impossible spikes. Anything above
+          // 200 km/h is treated as a glitch and dropped entirely.
+          if (s > 200) {
+            s = null;
+          } else {
+            setSpeedKmh(s);
+            if (s > maxSpeedRef.current) maxSpeedRef.current = s;
+          }
         }
         lastFixTimeRef.current = now;
         if (!last || distM(last, pt) >= MIN_MOVE_M) {
