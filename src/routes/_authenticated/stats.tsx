@@ -176,7 +176,7 @@ function StatsPage() {
         busiestDay = { name: DAY_NAMES[i], count: dayCounts[i] };
       }
     }
-    if (busiestDay && busiestDay.count === 0) busiestDay = null;
+    if (busiestDay !== null && busiestDay.count === 0) busiestDay = null;
 
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
