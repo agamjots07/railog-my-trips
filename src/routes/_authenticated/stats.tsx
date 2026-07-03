@@ -146,6 +146,38 @@ function StatsPage() {
     const topRoadRoute = [...roadRoutes.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
     const topVehicleEntry = [...roadVehicles.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
 
+    // New Road insights
+    // 1) Most travelled road — aggregate road names across all Drive trips.
+    const roadNameCounts = new Map<string, number>();
+    // 2) Cities visited by car — unique across Drive trips.
+    const citiesSet = new Set<string>();
+    for (const t of roadTrips) {
+      const d = roadDetails[t.id];
+      if (!d) continue;
+      for (const r of d.roads) roadNameCounts.set(r, (roadNameCounts.get(r) ?? 0) + 1);
+      for (const c of d.cities) citiesSet.add(c);
+    }
+    const mostTravelledRoad = [...roadNameCounts.entries()].sort((a, b) => b[1] - a[1])[0] ?? null;
+
+    // 3) Night rides — Drive trips starting between 22:00 and 04:59.
+    let nightRides = 0;
+    // 4) Busiest day of week
+    const dayCounts = new Array<number>(7).fill(0);
+    for (const t of roadTrips) {
+      const d = new Date(t.start_time);
+      const h = d.getHours();
+      if (h >= 22 || h < 5) nightRides++;
+      dayCounts[d.getDay()]++;
+    }
+    const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let busiestDay: { name: string; count: number } | null = null;
+    for (let i = 0; i < 7; i++) {
+      if (!busiestDay || dayCounts[i] > busiestDay.count) {
+        busiestDay = { name: DAY_NAMES[i], count: dayCounts[i] };
+      }
+    }
+    if (busiestDay && busiestDay.count === 0) busiestDay = null;
+
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
       total: trips.length, top,
@@ -162,9 +194,13 @@ function StatsPage() {
         topVehicleCount: topVehicleEntry?.[1] ?? 0,
         longest,
         fastest,
+        mostTravelledRoad,
+        nightRides,
+        cities: [...citiesSet].sort(),
+        busiestDay,
       },
     };
-  }, [trips, roadLabels]);
+  }, [trips, roadLabels, roadDetails]);
 
   if (trips && trips.length === 0) {
     return (
