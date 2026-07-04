@@ -213,7 +213,7 @@ function JourneyMapPage() {
         </div>
 
         <div className="pointer-events-auto mt-4 flex gap-1 overflow-x-auto rounded-full border border-white/[0.06] bg-card/80 p-1 backdrop-blur-xl">
-          {(["all", "rail", "road", "water", "adventure"] as Tab[]).map((t) => (
+          {(["all", "rail", "road", "bus", "water", "adventure"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
