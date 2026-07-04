@@ -77,7 +77,7 @@ function NewTrip() {
   const [selectedTripId, setSelectedTripId] = useState<string>("");
 
   const liveOnly = isLiveOnly(mode);
-  const isStationMode = mode === "train" || mode === "ferry";
+  const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
 
   // Force live for live-only modes
   useEffect(() => {
