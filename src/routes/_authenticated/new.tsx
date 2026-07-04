@@ -257,7 +257,7 @@ function NewTrip() {
                 key={c.value}
                 type="button"
                 onClick={() => setCategoryAndMode(c.value)}
-                className={`rounded-xl py-2.5 text-xs font-semibold transition ${
+                className={`rounded-xl py-2.5 text-[11px] font-semibold transition ${
                   active
                     ? "bg-primary text-primary-foreground shadow-[0_4px_16px_-6px_oklch(0.82_0.18_152/0.5)]"
                     : "text-muted-foreground hover:text-foreground"
