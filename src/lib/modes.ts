@@ -1,15 +1,16 @@
-import { Train, Ship, Car, Waves, Truck, Mountain, Zap, type LucideIcon } from "lucide-react";
+import { Train, Ship, Car, Waves, Truck, Mountain, Zap, Bus, type LucideIcon } from "lucide-react";
 
 export type TripMode =
   | "train"
   | "ferry"
   | "taxi"
+  | "bus"
   | "jetski"
   | "atv"
   | "skateboard"
   | "gondola";
 
-export type Category = "train" | "ferry" | "taxi" | "adventure";
+export type Category = "train" | "ferry" | "taxi" | "bus" | "adventure";
 
 export const ADVENTURE_SUBTYPES: TripMode[] = ["jetski", "atv", "skateboard", "gondola"];
 
@@ -17,6 +18,7 @@ export const MODE_LABEL: Record<TripMode, string> = {
   train: "Train",
   ferry: "Ferry",
   taxi: "Drive",
+  bus: "Bus",
   jetski: "Jet Ski",
   atv: "ATV",
   skateboard: "Skateboard",
@@ -27,6 +29,7 @@ export const MODE_ICON: Record<TripMode, LucideIcon> = {
   train: Train,
   ferry: Ship,
   taxi: Car,
+  bus: Bus,
   jetski: Waves,
   atv: Truck,
   skateboard: Zap,
@@ -38,6 +41,7 @@ export const MODE_COLOR: Record<TripMode, string> = {
   train: "#a78bfa",      // purple
   ferry: "#60a5fa",      // blue
   taxi: "#fb923c",       // orange
+  bus: "#f43f5e",        // rose
   jetski: "#22d3ee",     // cyan
   atv: "#84cc16",        // lime
   skateboard: "#ec4899", // pink
@@ -56,6 +60,6 @@ export function isAdventure(mode: TripMode): boolean {
 }
 
 export function categoryOf(mode: TripMode): Category {
-  if (mode === "train" || mode === "ferry" || mode === "taxi") return mode;
+  if (mode === "train" || mode === "ferry" || mode === "taxi" || mode === "bus") return mode;
   return "adventure";
 }

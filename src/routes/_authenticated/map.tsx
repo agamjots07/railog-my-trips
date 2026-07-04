@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/map")({
 
 type Trip = Tables<"trips">;
 type LatLng = [number, number];
-type Tab = "all" | "rail" | "water" | "road" | "adventure";
+type Tab = "all" | "rail" | "water" | "road" | "bus" | "adventure";
 type SubMode = TripMode | "lrt" | "monorail";
 
 const SUB_COLORS: Record<SubMode, string> = {
@@ -35,6 +35,7 @@ function classify(trip: Trip): SubMode {
   const m = trip.mode as TripMode;
   if (m === "ferry") return "ferry";
   if (m === "taxi") return "taxi";
+  if (m === "bus") return "bus";
   if (m === "jetski" || m === "atv" || m === "skateboard" || m === "gondola") return m;
   // train — refine into lrt/monorail by name keywords
   const hay = `${trip.route_name ?? ""} ${trip.origin} ${trip.destination}`.toLowerCase();
@@ -114,6 +115,7 @@ function JourneyMapPage() {
     if (tab === "water") list = list.filter((x) => x.sub === "ferry");
     else if (tab === "rail") list = list.filter((x) => RAIL_SET.has(x.sub));
     else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
+    else if (tab === "bus") list = list.filter((x) => x.sub === "bus");
     else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
     if (vehicleFilter) list = list.filter((x) => x.trip.vehicle_id === vehicleFilter);
     return list;
@@ -129,9 +131,11 @@ function JourneyMapPage() {
         ? ["train", "lrt", "monorail"]
         : tab === "road"
           ? ["taxi"]
-          : tab === "adventure"
-            ? ["jetski", "atv", "skateboard", "gondola"]
-            : [];
+          : tab === "bus"
+            ? ["bus"]
+            : tab === "adventure"
+              ? ["jetski", "atv", "skateboard", "gondola"]
+              : [];
 
   return (
     <div className="fixed inset-0 bg-background">
@@ -209,7 +213,7 @@ function JourneyMapPage() {
         </div>
 
         <div className="pointer-events-auto mt-4 flex gap-1 overflow-x-auto rounded-full border border-white/[0.06] bg-card/80 p-1 backdrop-blur-xl">
-          {(["all", "rail", "road", "water", "adventure"] as Tab[]).map((t) => (
+          {(["all", "rail", "road", "bus", "water", "adventure"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}

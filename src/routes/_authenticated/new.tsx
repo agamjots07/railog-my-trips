@@ -43,6 +43,7 @@ export const Route = createFileRoute("/_authenticated/new")({
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: "train", label: "Train" },
   { value: "ferry", label: "Ferry" },
+  { value: "bus", label: "Bus" },
   { value: "taxi", label: "Drive" },
   { value: "adventure", label: "Adventure" },
 ];
@@ -76,7 +77,7 @@ function NewTrip() {
   const [selectedTripId, setSelectedTripId] = useState<string>("");
 
   const liveOnly = isLiveOnly(mode);
-  const isStationMode = mode === "train" || mode === "ferry";
+  const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
 
   // Force live for live-only modes
   useEffect(() => {
@@ -98,7 +99,7 @@ function NewTrip() {
     const oAgency = originStation?.id.split(":")[0];
     const dAgency = destinationStation?.id.split(":")[0];
     if (!oAgency || oAgency !== dAgency) return null;
-    if (["go", "tif", "tews", "wif", "bcf"].includes(oAgency)) return oAgency;
+    if (["go", "ttc", "tif", "tews", "wif", "bcf"].includes(oAgency)) return oAgency;
     return null;
   })();
 
@@ -172,7 +173,7 @@ function NewTrip() {
       let geometry: [number, number][] | null = null;
       if (!isLive && o && d) {
         try {
-          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : "train");
+          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train");
         } catch {
           geometry = null;
         }
@@ -248,7 +249,7 @@ function NewTrip() {
 
       <form onSubmit={submit} className="mt-7 space-y-4">
         {/* Category picker */}
-        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
+        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
           {CATEGORIES.map((c) => {
             const active = c.value === category;
             return (
@@ -256,7 +257,7 @@ function NewTrip() {
                 key={c.value}
                 type="button"
                 onClick={() => setCategoryAndMode(c.value)}
-                className={`rounded-xl py-2.5 text-xs font-semibold transition ${
+                className={`rounded-xl py-2.5 text-[11px] font-semibold transition ${
                   active
                     ? "bg-primary text-primary-foreground shadow-[0_4px_16px_-6px_oklch(0.82_0.18_152/0.5)]"
                     : "text-muted-foreground hover:text-foreground"
@@ -346,8 +347,14 @@ function NewTrip() {
                 value={origin}
                 onChange={handleOriginChange}
                 onSelect={setOriginStation}
-                mode={mode === "ferry" ? "ferry" : "train"}
-                placeholder={mode === "ferry" ? "e.g. Jack Layton Ferry Terminal" : "e.g. Union Station"}
+                mode={mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train"}
+                placeholder={
+                  mode === "ferry"
+                    ? "e.g. Jack Layton Ferry Terminal"
+                    : mode === "bus"
+                      ? "e.g. Bathurst St at Bloor"
+                      : "e.g. Union Station"
+                }
                 required
               />
             </Field>
@@ -357,8 +364,14 @@ function NewTrip() {
                 value={destination}
                 onChange={handleDestChange}
                 onSelect={setDestinationStation}
-                mode={mode === "ferry" ? "ferry" : "train"}
-                placeholder={mode === "ferry" ? "e.g. Centre Island" : "e.g. Bloor GO"}
+                mode={mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train"}
+                placeholder={
+                  mode === "ferry"
+                    ? "e.g. Centre Island"
+                    : mode === "bus"
+                      ? "e.g. Yonge St at Dundas"
+                      : "e.g. Bloor GO"
+                }
                 required
               />
             </Field>

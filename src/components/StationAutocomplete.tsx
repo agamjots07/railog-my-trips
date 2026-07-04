@@ -13,7 +13,7 @@ export function StationAutocomplete({
   value: string;
   onChange: (v: string) => void;
   onSelect: (s: StationHit) => void;
-  mode: "train" | "ferry";
+  mode: "train" | "ferry" | "bus";
   placeholder?: string;
   required?: boolean;
 }) {
@@ -111,7 +111,7 @@ export function StationAutocomplete({
       )}
       {open && !loading && value.trim().length >= 2 && results.length === 0 && (
         <div className="absolute z-30 mt-1 w-full rounded-xl border border-border bg-popover px-3 py-2.5 text-xs text-muted-foreground shadow-xl">
-          No matching {mode === "ferry" ? "ferry terminals" : "stations"} found.
+          No matching {mode === "ferry" ? "ferry terminals" : mode === "bus" ? "bus stops" : "stations"} found.
         </div>
       )}
     </div>

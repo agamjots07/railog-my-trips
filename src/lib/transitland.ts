@@ -36,14 +36,15 @@ const MODE_KIND: Record<string, string> = {
 };
 
 // Which GTFS `mode` values should be returned for each UI mode.
-const MODE_FILTER: Record<"train" | "ferry", string[]> = {
+const MODE_FILTER: Record<"train" | "ferry" | "bus", string[]> = {
   train: ["train", "subway", "tram", "monorail"],
   ferry: ["ferry"],
+  bus: ["bus"],
 };
 
 export async function searchStations(
   query: string,
-  mode: "train" | "ferry",
+  mode: "train" | "ferry" | "bus",
   limit = 8,
 ): Promise<StationHit[]> {
   const q = query.trim();
@@ -88,7 +89,7 @@ export async function searchStations(
 export async function fetchRouteGeometry(
   origin: StationHit,
   destination: StationHit,
-  mode: "train" | "ferry",
+  mode: "train" | "ferry" | "bus",
 ): Promise<LatLng[] | null> {
   const modes = MODE_FILTER[mode];
   const { data, error } = await supabase.rpc("gtfs_shapes_near", {

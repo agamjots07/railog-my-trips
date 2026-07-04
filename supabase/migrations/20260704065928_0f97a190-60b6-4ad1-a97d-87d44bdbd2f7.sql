@@ -1,0 +1,1 @@
+ALTER TYPE public.transit_mode ADD VALUE IF NOT EXISTS 'bus';
