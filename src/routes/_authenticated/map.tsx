@@ -115,6 +115,7 @@ function JourneyMapPage() {
     if (tab === "water") list = list.filter((x) => x.sub === "ferry");
     else if (tab === "rail") list = list.filter((x) => RAIL_SET.has(x.sub));
     else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
+    else if (tab === "bus") list = list.filter((x) => x.sub === "bus");
     else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
     if (vehicleFilter) list = list.filter((x) => x.trip.vehicle_id === vehicleFilter);
     return list;
@@ -130,9 +131,11 @@ function JourneyMapPage() {
         ? ["train", "lrt", "monorail"]
         : tab === "road"
           ? ["taxi"]
-          : tab === "adventure"
-            ? ["jetski", "atv", "skateboard", "gondola"]
-            : [];
+          : tab === "bus"
+            ? ["bus"]
+            : tab === "adventure"
+              ? ["jetski", "atv", "skateboard", "gondola"]
+              : [];
 
   return (
     <div className="fixed inset-0 bg-background">
