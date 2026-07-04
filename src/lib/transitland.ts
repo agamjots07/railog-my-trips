@@ -36,9 +36,10 @@ const MODE_KIND: Record<string, string> = {
 };
 
 // Which GTFS `mode` values should be returned for each UI mode.
-const MODE_FILTER: Record<"train" | "ferry", string[]> = {
+const MODE_FILTER: Record<"train" | "ferry" | "bus", string[]> = {
   train: ["train", "subway", "tram", "monorail"],
   ferry: ["ferry"],
+  bus: ["bus"],
 };
 
 export async function searchStations(
