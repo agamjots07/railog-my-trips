@@ -99,7 +99,7 @@ function NewTrip() {
     const oAgency = originStation?.id.split(":")[0];
     const dAgency = destinationStation?.id.split(":")[0];
     if (!oAgency || oAgency !== dAgency) return null;
-    if (["go", "tif", "tews", "wif", "bcf"].includes(oAgency)) return oAgency;
+    if (["go", "ttc", "tif", "tews", "wif", "bcf"].includes(oAgency)) return oAgency;
     return null;
   })();
 
