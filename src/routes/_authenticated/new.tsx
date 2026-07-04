@@ -173,7 +173,7 @@ function NewTrip() {
       let geometry: [number, number][] | null = null;
       if (!isLive && o && d) {
         try {
-          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : "train");
+          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train");
         } catch {
           geometry = null;
         }
