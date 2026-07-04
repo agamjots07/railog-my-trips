@@ -347,8 +347,14 @@ function NewTrip() {
                 value={origin}
                 onChange={handleOriginChange}
                 onSelect={setOriginStation}
-                mode={mode === "ferry" ? "ferry" : "train"}
-                placeholder={mode === "ferry" ? "e.g. Jack Layton Ferry Terminal" : "e.g. Union Station"}
+                mode={mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train"}
+                placeholder={
+                  mode === "ferry"
+                    ? "e.g. Jack Layton Ferry Terminal"
+                    : mode === "bus"
+                      ? "e.g. Bathurst St at Bloor"
+                      : "e.g. Union Station"
+                }
                 required
               />
             </Field>
@@ -358,8 +364,14 @@ function NewTrip() {
                 value={destination}
                 onChange={handleDestChange}
                 onSelect={setDestinationStation}
-                mode={mode === "ferry" ? "ferry" : "train"}
-                placeholder={mode === "ferry" ? "e.g. Centre Island" : "e.g. Bloor GO"}
+                mode={mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train"}
+                placeholder={
+                  mode === "ferry"
+                    ? "e.g. Centre Island"
+                    : mode === "bus"
+                      ? "e.g. Yonge St at Dundas"
+                      : "e.g. Bloor GO"
+                }
                 required
               />
             </Field>
