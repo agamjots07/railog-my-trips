@@ -44,7 +44,7 @@ const MODE_FILTER: Record<"train" | "ferry" | "bus", string[]> = {
 
 export async function searchStations(
   query: string,
-  mode: "train" | "ferry",
+  mode: "train" | "ferry" | "bus",
   limit = 8,
 ): Promise<StationHit[]> {
   const q = query.trim();
