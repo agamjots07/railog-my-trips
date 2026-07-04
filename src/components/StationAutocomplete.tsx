@@ -13,7 +13,7 @@ export function StationAutocomplete({
   value: string;
   onChange: (v: string) => void;
   onSelect: (s: StationHit) => void;
-  mode: "train" | "ferry";
+  mode: "train" | "ferry" | "bus";
   placeholder?: string;
   required?: boolean;
 }) {
