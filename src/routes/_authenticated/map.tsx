@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/map")({
 
 type Trip = Tables<"trips">;
 type LatLng = [number, number];
-type Tab = "all" | "rail" | "water" | "road" | "adventure";
+type Tab = "all" | "rail" | "water" | "road" | "bus" | "adventure";
 type SubMode = TripMode | "lrt" | "monorail";
 
 const SUB_COLORS: Record<SubMode, string> = {
@@ -35,6 +35,7 @@ function classify(trip: Trip): SubMode {
   const m = trip.mode as TripMode;
   if (m === "ferry") return "ferry";
   if (m === "taxi") return "taxi";
+  if (m === "bus") return "bus";
   if (m === "jetski" || m === "atv" || m === "skateboard" || m === "gondola") return m;
   // train — refine into lrt/monorail by name keywords
   const hay = `${trip.route_name ?? ""} ${trip.origin} ${trip.destination}`.toLowerCase();
