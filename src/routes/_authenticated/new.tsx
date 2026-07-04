@@ -249,7 +249,7 @@ function NewTrip() {
 
       <form onSubmit={submit} className="mt-7 space-y-4">
         {/* Category picker */}
-        <div className="grid grid-cols-4 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
+        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
           {CATEGORIES.map((c) => {
             const active = c.value === category;
             return (
