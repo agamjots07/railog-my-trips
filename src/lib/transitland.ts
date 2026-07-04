@@ -89,7 +89,7 @@ export async function searchStations(
 export async function fetchRouteGeometry(
   origin: StationHit,
   destination: StationHit,
-  mode: "train" | "ferry",
+  mode: "train" | "ferry" | "bus",
 ): Promise<LatLng[] | null> {
   const modes = MODE_FILTER[mode];
   const { data, error } = await supabase.rpc("gtfs_shapes_near", {
