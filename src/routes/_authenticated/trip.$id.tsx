@@ -196,7 +196,7 @@ function TripDetail() {
         <Stat label="Date" value={fmtDate(trip.start_time)} />
         <Stat
           label="Duration"
-          value={isLive ? fmtDuration(trip.start_time, new Date().toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
+          value={isLive ? fmtDuration(trip.start_time, new Date(Date.now() - pausedMs).toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
           bordered
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
