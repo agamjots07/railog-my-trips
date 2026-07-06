@@ -118,7 +118,7 @@ function JourneyMapPage() {
     else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
     else if (tab === "bus") list = list.filter((x) => x.sub === "bus");
     else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
-    if (vehicleFilter) list = list.filter((x) => x.trip.vehicle_id === vehicleFilter);
+    if (vehicleFilter.size > 0) list = list.filter((x) => x.trip.vehicle_id && vehicleFilter.has(x.trip.vehicle_id));
     return list;
   }, [enriched, tab, vehicleFilter]);
 
