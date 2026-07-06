@@ -228,35 +228,90 @@ function JourneyMapPage() {
           ))}
         </div>
 
-        {vehicles.length > 0 && (tab === "all" || tab === "road") && (
-          <div className="pointer-events-auto mt-2 flex items-center gap-2 rounded-full border border-white/[0.06] bg-card/80 px-3 py-1.5 backdrop-blur-xl">
-            <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
-              Vehicle
-            </span>
-            <select
-              value={vehicleFilter}
-              onChange={(e) => setVehicleFilter(e.target.value)}
-              className="flex-1 bg-transparent text-[12px] font-semibold text-foreground outline-none"
-            >
-              <option value="">All vehicles</option>
-              {vehicles.map((v) => (
-                <option key={v.id} value={v.id}>
-                  {v.name}
-                  {v.make || v.model ? ` · ${[v.make, v.model].filter(Boolean).join(" ")}` : ""}
-                </option>
-              ))}
-            </select>
-            {vehicleFilter && (
+        {vehicles.length > 0 && (tab === "all" || tab === "road") && (() => {
+          const selected = vehicleFilter.size;
+          const summary =
+            selected === 0
+              ? "All vehicles"
+              : selected === 1
+                ? vehicles.find((v) => vehicleFilter.has(v.id))?.name ?? "1 selected"
+                : `${selected} selected`;
+          const toggle = (id: string) => {
+            setVehicleFilter((prev) => {
+              const next = new Set(prev);
+              if (next.has(id)) next.delete(id);
+              else next.add(id);
+              return next;
+            });
+          };
+          return (
+            <div className="pointer-events-auto mt-2 rounded-2xl border border-white/[0.06] bg-card/80 backdrop-blur-xl">
               <button
                 type="button"
-                onClick={() => setVehicleFilter("")}
-                className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                onClick={() => setVehicleMenuOpen((o) => !o)}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left"
               >
-                Clear
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+                  Vehicle
+                </span>
+                <span className="flex-1 truncate text-[12px] font-semibold text-foreground">
+                  {summary}
+                </span>
+                {selected > 0 && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVehicleFilter(new Set());
+                    }}
+                    className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </span>
+                )}
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {vehicleMenuOpen ? "▴" : "▾"}
+                </span>
               </button>
-            )}
-          </div>
-        )}
+              {vehicleMenuOpen && (
+                <div className="max-h-56 overflow-y-auto border-t border-white/[0.06] px-2 py-2">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]">
+                    <input
+                      type="checkbox"
+                      checked={selected === 0}
+                      onChange={() => setVehicleFilter(new Set())}
+                      className="h-3.5 w-3.5 accent-primary"
+                    />
+                    <span className="text-[12px] font-semibold text-foreground">All vehicles</span>
+                  </label>
+                  {vehicles.map((v) => (
+                    <label
+                      key={v.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={vehicleFilter.has(v.id)}
+                        onChange={() => toggle(v.id)}
+                        className="h-3.5 w-3.5 accent-primary"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-foreground">
+                        {v.name}
+                        {v.make || v.model ? (
+                          <span className="text-muted-foreground">
+                            {" · "}
+                            {[v.make, v.model].filter(Boolean).join(" ")}
+                          </span>
+                        ) : null}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="pointer-events-none absolute right-4 top-[max(env(safe-area-inset-top),0.75rem)] z-[500] flex flex-col items-end gap-2">
