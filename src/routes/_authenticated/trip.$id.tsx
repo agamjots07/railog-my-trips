@@ -94,9 +94,7 @@ function TripDetail() {
       : null;
   const storedPath = parsePath(trip.route_geometry);
   const path = isLive ? livePath : storedPath;
-  const distanceKm = isLive
-    ? path.reduce((acc, p, i) => (i === 0 ? 0 : acc + haversine(path[i - 1], p)), 0)
-    : trip.distance_km;
+  const distanceKm = isLive ? liveDistanceKm : trip.distance_km;
 
   const endLive = async () => {
     try {
