@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
@@ -59,7 +59,7 @@ function TripDetail() {
   const isLive = !!trip?.is_live && !trip?.end_time;
   const initialPath = useMemo(() => (trip ? parsePath(trip.route_geometry) : []), [trip]);
 
-  const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive } = useLiveTracking({
+  const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive, paused, pausedMs, warmingUp, distanceKm: liveDistanceKm, togglePause } = useLiveTracking({
     tripId: id,
     enabled: isLive,
     initialPath,
@@ -94,9 +94,7 @@ function TripDetail() {
       : null;
   const storedPath = parsePath(trip.route_geometry);
   const path = isLive ? livePath : storedPath;
-  const distanceKm = isLive
-    ? path.reduce((acc, p, i) => (i === 0 ? 0 : acc + haversine(path[i - 1], p)), 0)
-    : trip.distance_km;
+  const distanceKm = isLive ? liveDistanceKm : trip.distance_km;
 
   const endLive = async () => {
     try {
@@ -156,10 +154,20 @@ function TripDetail() {
           {MODE_LABEL[mode] ?? trip.mode}
         </span>
         {isLive && (
-          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" />
-            {tracking ? "Recording" : "Starting…"}
-          </span>
+          paused ? (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              <Pause className="h-3 w-3" strokeWidth={2.75} /> Paused
+            </span>
+          ) : warmingUp ? (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-sky-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-300">
+              <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.75} /> GPS lock…
+            </span>
+          ) : (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" />
+              {tracking ? "Recording" : "Starting…"}
+            </span>
+          )
         )}
         {isLive && wakeLockActive && (
           <span
@@ -198,7 +206,7 @@ function TripDetail() {
         <Stat label="Date" value={fmtDate(trip.start_time)} />
         <Stat
           label="Duration"
-          value={isLive ? fmtDuration(trip.start_time, new Date().toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
+          value={isLive ? fmtDuration(trip.start_time, new Date(Date.now() - pausedMs).toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
           bordered
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
@@ -302,13 +310,43 @@ function TripDetail() {
         </div>
       )}
 
+      {isLive && paused && (
+        <div className="mt-5 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">Trip paused</p>
+          <p className="mt-1 text-xs text-amber-200/80">
+            GPS is off. Paused time won't count toward duration or distance.
+          </p>
+        </div>
+      )}
+
       {isLive && (
-        <button
-          onClick={endLive}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-bold text-destructive-foreground shadow-[0_10px_30px_-10px_oklch(0.64_0.22_24/0.5)] transition active:scale-[0.98]"
-        >
-          <StopCircle className="h-5 w-5" /> End trip now
-        </button>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            onClick={togglePause}
+            className={`flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold transition active:scale-[0.98] ${
+              paused
+                ? "bg-primary text-primary-foreground"
+                : "border border-white/[0.08] bg-card text-foreground"
+            }`}
+            style={paused ? { boxShadow: "var(--shadow-glow)" } : undefined}
+          >
+            {paused ? (
+              <>
+                <Play className="h-5 w-5" /> Resume
+              </>
+            ) : (
+              <>
+                <Pause className="h-5 w-5" /> Pause
+              </>
+            )}
+          </button>
+          <button
+            onClick={endLive}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-bold text-destructive-foreground shadow-[0_10px_30px_-10px_oklch(0.64_0.22_24/0.5)] transition active:scale-[0.98]"
+          >
+            <StopCircle className="h-5 w-5" /> End trip
+          </button>
+        </div>
       )}
 
       {trip.notes && (
@@ -349,15 +387,4 @@ function Stat({ label, value, bordered }: { label: string; value: string; border
       <p className="mt-1.5 font-mono text-base font-bold tabular-nums">{value}</p>
     </div>
   );
-}
-
-function haversine(a: LatLng, b: LatLng): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const R = 6371;
-  const dLat = toRad(b[0] - a[0]);
-  const dLng = toRad(b[1] - a[1]);
-  const lat1 = toRad(a[0]);
-  const lat2 = toRad(b[0]);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(h));
 }
