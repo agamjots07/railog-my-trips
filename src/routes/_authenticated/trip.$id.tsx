@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
