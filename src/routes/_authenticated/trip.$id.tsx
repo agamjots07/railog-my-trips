@@ -59,7 +59,7 @@ function TripDetail() {
   const isLive = !!trip?.is_live && !trip?.end_time;
   const initialPath = useMemo(() => (trip ? parsePath(trip.route_geometry) : []), [trip]);
 
-  const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive } = useLiveTracking({
+  const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive, paused, pausedMs, warmingUp, distanceKm: liveDistanceKm, togglePause } = useLiveTracking({
     tripId: id,
     enabled: isLive,
     initialPath,
