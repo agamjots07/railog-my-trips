@@ -310,13 +310,43 @@ function TripDetail() {
         </div>
       )}
 
+      {isLive && paused && (
+        <div className="mt-5 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-300">Trip paused</p>
+          <p className="mt-1 text-xs text-amber-200/80">
+            GPS is off. Paused time won't count toward duration or distance.
+          </p>
+        </div>
+      )}
+
       {isLive && (
-        <button
-          onClick={endLive}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-bold text-destructive-foreground shadow-[0_10px_30px_-10px_oklch(0.64_0.22_24/0.5)] transition active:scale-[0.98]"
-        >
-          <StopCircle className="h-5 w-5" /> End trip now
-        </button>
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            onClick={togglePause}
+            className={`flex items-center justify-center gap-2 rounded-2xl py-4 text-sm font-bold transition active:scale-[0.98] ${
+              paused
+                ? "bg-primary text-primary-foreground"
+                : "border border-white/[0.08] bg-card text-foreground"
+            }`}
+            style={paused ? { boxShadow: "var(--shadow-glow)" } : undefined}
+          >
+            {paused ? (
+              <>
+                <Play className="h-5 w-5" /> Resume
+              </>
+            ) : (
+              <>
+                <Pause className="h-5 w-5" /> Pause
+              </>
+            )}
+          </button>
+          <button
+            onClick={endLive}
+            className="flex items-center justify-center gap-2 rounded-2xl bg-destructive py-4 text-sm font-bold text-destructive-foreground shadow-[0_10px_30px_-10px_oklch(0.64_0.22_24/0.5)] transition active:scale-[0.98]"
+          >
+            <StopCircle className="h-5 w-5" /> End trip
+          </button>
+        </div>
       )}
 
       {trip.notes && (
