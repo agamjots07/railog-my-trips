@@ -154,10 +154,20 @@ function TripDetail() {
           {MODE_LABEL[mode] ?? trip.mode}
         </span>
         {isLive && (
-          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" />
-            {tracking ? "Recording" : "Starting…"}
-          </span>
+          paused ? (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
+              <Pause className="h-3 w-3" strokeWidth={2.75} /> Paused
+            </span>
+          ) : warmingUp ? (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-sky-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-sky-300">
+              <Loader2 className="h-3 w-3 animate-spin" strokeWidth={2.75} /> GPS lock…
+            </span>
+          ) : (
+            <span className="ml-auto flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" />
+              {tracking ? "Recording" : "Starting…"}
+            </span>
+          )
         )}
         {isLive && wakeLockActive && (
           <span
