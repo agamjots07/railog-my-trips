@@ -87,7 +87,8 @@ function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
   const [tab, setTab] = useState<Tab>("all");
-  const [vehicleFilter, setVehicleFilter] = useState<string>("");
+  const [vehicleFilter, setVehicleFilter] = useState<Set<string>>(new Set());
+  const [vehicleMenuOpen, setVehicleMenuOpen] = useState(false);
   const [mapStyle, setMapStyle] = useState<MapStyle>("satellite");
 
   useEffect(() => {
