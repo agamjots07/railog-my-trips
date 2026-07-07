@@ -9,7 +9,9 @@ import type { Tables } from "@/integrations/supabase/types";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { reverseGeocode } from "@/lib/reverseGeocode";
+import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 import { toast } from "sonner";
+
 
 type Trip = Tables<"trips">;
 type Vehicle = Tables<"vehicles">;
