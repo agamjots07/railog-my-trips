@@ -109,8 +109,15 @@ function FeedPage() {
       )}
 
       <div className="space-y-3">
-        {trips?.map((t) => <TripCard key={t.id} trip={t} />)}
+        {trips?.map((t) => (
+          <TripCard
+            key={t.id}
+            trip={t}
+            vehicle={t.vehicle_id ? vehicles[t.vehicle_id] : undefined}
+          />
+        ))}
       </div>
+
     </div>
   );
 }
