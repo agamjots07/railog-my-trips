@@ -394,3 +394,133 @@ export function ShareTripCard({
   if (typeof document === "undefined") return null;
   return createPortal(overlay, document.body);
 }
+
+type LatLng2 = LatLng;
+function ShareMapInner({
+  fitPoints,
+  routeLine,
+  stops,
+  color,
+  dashed,
+  onReady,
+}: {
+  fitPoints: LatLng2[];
+  routeLine: LatLng2[] | null;
+  stops: LatLng2[];
+  color: string;
+  dashed: boolean;
+  onReady: () => void;
+}) {
+  const { provider, forceLeaflet } = useMapProvider();
+  if (provider === "google") {
+    return (
+      <GoogleMapCanvas
+        style="satellite"
+        interactive={false}
+        onFail={forceLeaflet}
+        onReady={onReady}
+        routes={
+          routeLine
+            ? [{ id: "r", points: routeLine, color, dashed, weight: 4 }]
+            : stops.length === 2
+              ? [{ id: "r", points: stops, color, dashed: true, weight: 3, opacity: 0.6 }]
+              : []
+        }
+        stops={stops.map((p) => ({ pos: p, color }))}
+      />
+    );
+  }
+  return (
+    <MapContainer
+      center={fitPoints[0]}
+      zoom={12}
+      zoomControl={false}
+      attributionControl={false}
+      scrollWheelZoom={false}
+      dragging={false}
+      doubleClickZoom={false}
+      touchZoom={false}
+      boxZoom={false}
+      keyboard={false}
+      style={{ height: "100%", width: "100%", background: "#0f0f17" }}
+    >
+      <TileLayer
+        url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+        maxZoom={19}
+        crossOrigin="anonymous"
+      />
+      {routeLine && (
+        <Polyline
+          positions={routeLine}
+          pathOptions={{
+            color,
+            weight: 4,
+            opacity: 0.95,
+            dashArray: dashed ? "8 6" : undefined,
+            lineCap: "round",
+            lineJoin: "round",
+          }}
+        />
+      )}
+      {!routeLine && stops.length === 2 && (
+        <Polyline
+          positions={stops}
+          pathOptions={{ color, weight: 3, opacity: 0.6, dashArray: "4 6" }}
+        />
+      )}
+      {stops.map((p, i) => (
+        <CircleMarker
+          key={i}
+          center={p}
+          radius={6}
+          pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
+        />
+      ))}
+      <ShareFitBounds points={fitPoints} />
+      <ShareMapReady onReady={onReady} />
+    </MapContainer>
+  );
+}
+
+function ShareFitBounds({ points }: { points: LatLng[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (points.length === 0) return;
+    if (points.length === 1) {
+      map.setView(points[0], 13);
+      return;
+    }
+    const bounds = L.latLngBounds(points.map((p) => L.latLng(p[0], p[1])));
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }, [points, map]);
+  return null;
+}
+
+function ShareMapReady({ onReady }: { onReady: () => void }) {
+  const map = useMap();
+  useEffect(() => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setTimeout(onReady, 350);
+    };
+    map.whenReady(() => {
+      let pending = 0;
+      map.eachLayer((layer) => {
+        if (layer instanceof L.TileLayer) {
+          pending++;
+          layer.once("load", () => {
+            pending--;
+            if (pending <= 0) finish();
+          });
+        }
+      });
+      if (pending === 0) finish();
+    });
+    const t = setTimeout(finish, 3500);
+    return () => clearTimeout(t);
+  }, [map, onReady]);
+  return null;
+}
+
