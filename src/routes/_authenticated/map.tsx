@@ -8,6 +8,8 @@ import { fmtDate } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
+import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
+
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({ meta: [{ title: "Journey Map — Pencer" }] }),
@@ -138,67 +140,94 @@ function JourneyMapPage() {
               ? ["jetski", "atv", "skateboard", "gondola"]
               : [];
 
+  const { provider, forceLeaflet } = useMapProvider();
+
   return (
     <div className="fixed inset-0 bg-background">
-      <MapContainer
-        center={[20, 0]}
-        zoom={2}
-        worldCopyJump
-        zoomControl={false}
-        className="h-full w-full"
-      >
-        {mapStyle === "satellite" ? (
-          <>
-            <TileLayer
-              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              attribution="Tiles &copy; Esri"
-              maxZoom={19}
-            />
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-              subdomains="abcd"
-              opacity={0.85}
-            />
-          </>
-        ) : (
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            subdomains="abcd"
-            attribution="&copy; OpenStreetMap &copy; CARTO"
-            maxZoom={19}
-          />
-        )}
-        {visible.map(({ trip, sub, path }) => (
-          <Polyline
-            key={trip.id}
-            positions={path}
-            pathOptions={{
+      {provider === "google" ? (
+        <div className="h-full w-full">
+          <GoogleMapCanvas
+            style={mapStyle}
+            onFail={forceLeaflet}
+            center={[20, 0]}
+            zoom={2}
+            routes={visible.map(({ trip, sub, path }) => ({
+              id: trip.id,
+              points: path,
               color: SUB_COLORS[sub],
               weight: 3.5,
               opacity: 0.9,
-              dashArray: sub === "ferry" || sub === "jetski" ? "6 6" : undefined,
-              lineCap: "round",
-              lineJoin: "round",
-            }}
-          >
-            <Popup className="journey-popup">
-              <div className="font-display">
-                <div
-                  className="text-[10px] font-bold uppercase tracking-[0.15em]"
-                  style={{ color: SUB_COLORS[sub] }}
-                >
-                  {SUB_LABELS[sub]}
+              dashed: sub === "ferry" || sub === "jetski",
+              popupHtml: `<div style="font-family:inherit;min-width:180px">
+                <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:${SUB_COLORS[sub]}">${SUB_LABELS[sub]}</div>
+                <div style="margin-top:4px;font-size:13px;font-weight:700;color:#0a0a0f">${(trip.route_name || `${trip.origin} → ${trip.destination}`).replace(/</g, "&lt;")}</div>
+                <div style="margin-top:2px;font-size:11px;color:#64748b">${fmtDate(trip.start_time)}</div>
+              </div>`,
+            }))}
+          />
+        </div>
+      ) : (
+        <MapContainer
+          center={[20, 0]}
+          zoom={2}
+          worldCopyJump
+          zoomControl={false}
+          className="h-full w-full"
+        >
+          {mapStyle === "satellite" ? (
+            <>
+              <TileLayer
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                attribution="Tiles &copy; Esri"
+                maxZoom={19}
+              />
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+                subdomains="abcd"
+                opacity={0.85}
+              />
+            </>
+          ) : (
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              attribution="&copy; OpenStreetMap &copy; CARTO"
+              maxZoom={19}
+            />
+          )}
+          {visible.map(({ trip, sub, path }) => (
+            <Polyline
+              key={trip.id}
+              positions={path}
+              pathOptions={{
+                color: SUB_COLORS[sub],
+                weight: 3.5,
+                opacity: 0.9,
+                dashArray: sub === "ferry" || sub === "jetski" ? "6 6" : undefined,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            >
+              <Popup className="journey-popup">
+                <div className="font-display">
+                  <div
+                    className="text-[10px] font-bold uppercase tracking-[0.15em]"
+                    style={{ color: SUB_COLORS[sub] }}
+                  >
+                    {SUB_LABELS[sub]}
+                  </div>
+                  <div className="mt-1 text-sm font-bold leading-tight text-foreground">
+                    {trip.route_name || `${trip.origin} → ${trip.destination}`}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">{fmtDate(trip.start_time)}</div>
                 </div>
-                <div className="mt-1 text-sm font-bold leading-tight text-foreground">
-                  {trip.route_name || `${trip.origin} → ${trip.destination}`}
-                </div>
-                <div className="mt-0.5 text-xs text-muted-foreground">{fmtDate(trip.start_time)}</div>
-              </div>
-            </Popup>
-          </Polyline>
-        ))}
-        <FitAll points={allPoints} />
-      </MapContainer>
+              </Popup>
+            </Polyline>
+          ))}
+          <FitAll points={allPoints} />
+        </MapContainer>
+      )}
+
 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] px-4 pt-[max(env(safe-area-inset-top),0.75rem)]">
         <div className="pointer-events-auto">

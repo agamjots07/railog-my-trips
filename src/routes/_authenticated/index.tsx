@@ -18,9 +18,12 @@ export const Route = createFileRoute("/_authenticated/")({
 
 type Trip = Tables<"trips">;
 
+type Vehicle = Tables<"vehicles">;
+
 function FeedPage() {
   const { user } = useAuth();
   const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -32,7 +35,16 @@ function FeedPage() {
         if (error) toast.error(error.message);
         setTrips(data ?? []);
       });
+    supabase
+      .from("vehicles")
+      .select("*")
+      .then(({ data }) => {
+        const map: Record<string, Vehicle> = {};
+        for (const v of data ?? []) map[v.id] = v;
+        setVehicles(map);
+      });
   }, [user]);
+
 
   const summary = useMemo(() => {
     if (!trips || trips.length === 0) return null;
@@ -97,17 +109,25 @@ function FeedPage() {
       )}
 
       <div className="space-y-3">
-        {trips?.map((t) => <TripCard key={t.id} trip={t} />)}
+        {trips?.map((t) => (
+          <TripCard
+            key={t.id}
+            trip={t}
+            vehicle={t.vehicle_id ? vehicles[t.vehicle_id] : undefined}
+          />
+        ))}
       </div>
+
     </div>
   );
 }
 
-function TripCard({ trip }: { trip: Trip }) {
+function TripCard({ trip, vehicle }: { trip: Trip; vehicle?: Vehicle }) {
   const mode = trip.mode as TripMode;
   const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
   const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
   const live = trip.is_live && !trip.end_time;
+  const driveLabel = mode === "taxi" ? (vehicle?.name || "Drive") : null;
 
   return (
     <Link
@@ -130,6 +150,15 @@ function TripCard({ trip }: { trip: Trip }) {
           <Icon className="h-5 w-5" strokeWidth={2.5} />
         </div>
         <div className="flex items-center gap-2">
+          {driveLabel && (
+            <span
+              className="max-w-[160px] truncate rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
+              style={{ background: `${color}22`, color }}
+              title={driveLabel}
+            >
+              {driveLabel}
+            </span>
+          )}
           {live && (
             <span className="flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
               <span className="h-1.5 w-1.5 rounded-full bg-primary live-dot" /> Live
@@ -143,6 +172,7 @@ function TripCard({ trip }: { trip: Trip }) {
         <h3 className="truncate text-[17px] font-bold leading-tight">
           {trip.route_name || `${trip.origin} → ${trip.destination}`}
         </h3>
+
         <div className="mt-2 flex items-center gap-1.5 text-[13px] text-muted-foreground">
           <span className="truncate">{trip.origin}</span>
           <ArrowRight className="h-3 w-3 shrink-0 opacity-60" />
