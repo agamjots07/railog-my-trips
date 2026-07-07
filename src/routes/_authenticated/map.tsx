@@ -8,6 +8,8 @@ import { fmtDate } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
+import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
+
 
 export const Route = createFileRoute("/_authenticated/map")({
   head: () => ({ meta: [{ title: "Journey Map — Pencer" }] }),
