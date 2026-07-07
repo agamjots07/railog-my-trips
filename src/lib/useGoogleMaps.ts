@@ -36,8 +36,9 @@ function loadOnce(): Promise<any> {
         setStatus("ready");
         return g.google;
       }
-      const { key } = await getGoogleMapsKey();
+      const key = (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined) ?? "";
       if (!key) throw new Error("no key");
+
       // Google calls this on any auth/referrer/quota failure.
       g.gm_authFailure = () => setStatus("failed");
       await new Promise<void>((resolve, reject) => {
