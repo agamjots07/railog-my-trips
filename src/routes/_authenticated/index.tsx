@@ -18,9 +18,12 @@ export const Route = createFileRoute("/_authenticated/")({
 
 type Trip = Tables<"trips">;
 
+type Vehicle = Tables<"vehicles">;
+
 function FeedPage() {
   const { user } = useAuth();
   const [trips, setTrips] = useState<Trip[] | null>(null);
+  const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -32,7 +35,16 @@ function FeedPage() {
         if (error) toast.error(error.message);
         setTrips(data ?? []);
       });
+    supabase
+      .from("vehicles")
+      .select("*")
+      .then(({ data }) => {
+        const map: Record<string, Vehicle> = {};
+        for (const v of data ?? []) map[v.id] = v;
+        setVehicles(map);
+      });
   }, [user]);
+
 
   const summary = useMemo(() => {
     if (!trips || trips.length === 0) return null;
