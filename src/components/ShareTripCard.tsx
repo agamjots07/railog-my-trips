@@ -315,59 +315,20 @@ export function ShareTripCard({
                 }}
               >
                 {fitPoints.length > 0 ? (
-                  <MapContainer
-                    center={fitPoints[0]}
-                    zoom={12}
-                    zoomControl={false}
-                    attributionControl={false}
-                    scrollWheelZoom={false}
-                    dragging={false}
-                    doubleClickZoom={false}
-                    touchZoom={false}
-                    boxZoom={false}
-                    keyboard={false}
-                    style={{ height: "100%", width: "100%", background: "#0f0f17" }}
-                  >
-                    <TileLayer
-                      url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                      maxZoom={19}
-                      crossOrigin="anonymous"
-                    />
-                    {routeLine && (
-                      <Polyline
-                        positions={routeLine}
-                        pathOptions={{
-                          color,
-                          weight: 4,
-                          opacity: 0.95,
-                          dashArray: dashed ? "8 6" : undefined,
-                          lineCap: "round",
-                          lineJoin: "round",
-                        }}
-                      />
-                    )}
-                    {!routeLine && stops.length === 2 && (
-                      <Polyline
-                        positions={stops}
-                        pathOptions={{ color, weight: 3, opacity: 0.6, dashArray: "4 6" }}
-                      />
-                    )}
-                    {stops.map((p, i) => (
-                      <CircleMarker
-                        key={i}
-                        center={p}
-                        radius={6}
-                        pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
-                      />
-                    ))}
-                    <FitBounds points={fitPoints} />
-                    <MapReady onReady={() => setMapReady(true)} />
-                  </MapContainer>
+                  <ShareMapInner
+                    fitPoints={fitPoints}
+                    routeLine={routeLine}
+                    stops={stops}
+                    color={color}
+                    dashed={dashed}
+                    onReady={() => setMapReady(true)}
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center text-[11px] uppercase tracking-wider text-white/40">
                     No route geometry
                   </div>
                 )}
+
                 {!mapReady && fitPoints.length > 0 && (
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#0f0f17]/60">
                     <Loader2 className="h-4 w-4 animate-spin text-white/60" />
