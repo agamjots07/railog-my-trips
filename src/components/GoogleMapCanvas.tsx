@@ -31,6 +31,7 @@ type Props = {
   worldCopyJump?: boolean;
   onReady?: () => void;
   onFail?: () => void;
+  onMapClick?: (p: LatLng) => void;
 };
 
 /**
