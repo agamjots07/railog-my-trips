@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { haversineKm } from "@/lib/geo";
 import { reverseGeocode } from "@/lib/reverseGeocode";
+import { beat, clearBeat } from "@/lib/liveRecovery";
 
 type LatLng = [number, number];
 
 const MIN_MOVE_M = 8; // ignore jitter under ~8m
 const SAVE_INTERVAL_MS = 10_000;
+
 // After resume, we require this many stable fixes before recording again.
 // A "stable" fix is one with reasonable accuracy — this prevents the first
 // post-resume reading (often a cold-start GPS spike) from creating a fake
