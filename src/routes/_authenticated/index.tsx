@@ -10,6 +10,7 @@ import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
 import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { useAchievementQueue } from "@/lib/useAchievementQueue";
 import { EmptyState } from "@/components/EmptyState";
+import { isRecordingActive } from "@/lib/liveRecovery";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Pencer" }] }),
