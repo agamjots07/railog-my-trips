@@ -52,6 +52,12 @@ function FeedPage() {
     return { count: trips.length, km };
   }, [trips]);
 
+  // A trip still flagged live with no tab actively recording = crashed session.
+  const interrupted = useMemo(
+    () => trips?.find((t) => t.is_live && !t.end_time && !isRecordingActive(t.id)) ?? null,
+    [trips],
+  );
+
   const { current: celebrating, dismiss } = useAchievementQueue(trips);
 
   return (
