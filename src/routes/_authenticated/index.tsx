@@ -97,6 +97,23 @@ function FeedPage() {
         </div>
       )}
 
+      {interrupted && (
+        <Link
+          to="/trip/$id"
+          params={{ id: interrupted.id }}
+          className="mb-4 block rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4"
+        >
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Recording interrupted</p>
+          </div>
+          <p className="mt-1.5 text-xs text-amber-200/80">
+            {interrupted.route_name || `${interrupted.origin} → ${interrupted.destination}`} — tap to
+            resume or finalize from saved points.
+          </p>
+        </Link>
+      )}
+
       {trips?.length === 0 && (
         <EmptyState
           icon={Train}
@@ -107,6 +124,7 @@ function FeedPage() {
           ctaTo="/new"
         />
       )}
+
 
       <div className="space-y-3">
         {trips?.map((t) => (
