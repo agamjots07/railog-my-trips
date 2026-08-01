@@ -414,6 +414,35 @@ function TripDetail() {
 
       {!isLive && (
         <button
+          onClick={() => setBuilding(true)}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card py-4 text-sm font-bold text-foreground transition active:scale-[0.98]"
+        >
+          <RouteIcon className="h-5 w-5" />
+          {storedPath.length >= 2 ? "Edit route & top speed" : "Add route"}
+        </button>
+      )}
+
+      {building && (
+        <RouteBuilder
+          tripId={trip.id}
+          mode={mode}
+          center={origin ?? storedPath[0] ?? null}
+          initialPath={storedPath}
+          initialTopSpeed={trip.max_speed_kmh}
+          onClose={() => setBuilding(false)}
+          onSaved={({ path: p, distanceKm: km, maxSpeed }) =>
+            setTrip({
+              ...trip,
+              route_geometry: p as unknown as Trip["route_geometry"],
+              distance_km: km,
+              max_speed_kmh: maxSpeed ?? trip.max_speed_kmh,
+            })
+          }
+        />
+      )}
+
+      {!isLive && (
+        <button
           onClick={() => setSharing(true)}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
           style={{ boxShadow: "var(--shadow-glow)" }}
@@ -421,6 +450,7 @@ function TripDetail() {
           <Share2 className="h-5 w-5" /> Share this trip
         </button>
       )}
+
 
       {sharing && (
         <ShareTripCard trip={trip} path={path} vehicle={vehicle} onClose={() => setSharing(false)} />
