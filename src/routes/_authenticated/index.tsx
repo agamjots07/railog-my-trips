@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, LogOut, ArrowRight } from "lucide-react";
+import { Train, LogOut, ArrowRight, AlertTriangle } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
