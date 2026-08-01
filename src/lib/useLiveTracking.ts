@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { haversineKm } from "@/lib/geo";
 import { reverseGeocode } from "@/lib/reverseGeocode";
+import { beat, clearBeat } from "@/lib/liveRecovery";
 
 type LatLng = [number, number];
 
 const MIN_MOVE_M = 8; // ignore jitter under ~8m
 const SAVE_INTERVAL_MS = 10_000;
+
 // After resume, we require this many stable fixes before recording again.
 // A "stable" fix is one with reasonable accuracy — this prevents the first
 // post-resume reading (often a cold-start GPS spike) from creating a fake
@@ -186,8 +188,9 @@ export function useLiveTracking(opts: {
     if (startedAtRef.current == null) startedAtRef.current = Date.now();
     if (!pausedRef.current) startWatch();
 
-    saveTimerRef.current = setInterval(async () => {
-      if (!dirtyRef.current) return;
+    // Persist points to the DB continuously so a crash never loses the ride.
+    const persist = async (force = false) => {
+      if (!force && !dirtyRef.current) return;
       dirtyRef.current = false;
       const snapshot = pathRef.current;
       await supabase
@@ -195,12 +198,29 @@ export function useLiveTracking(opts: {
         .update({
           route_geometry: snapshot as unknown as never,
           distance_km: distanceKmRef.current,
+          ...(maxSpeedRef.current > 0 ? { max_speed_kmh: maxSpeedRef.current } : {}),
         })
         .eq("id", tripId);
+    };
+
+    beat(tripId);
+    saveTimerRef.current = setInterval(() => {
+      beat(tripId);
+      void persist();
     }, SAVE_INTERVAL_MS);
+
+    // Flush immediately when the tab is backgrounded or closed.
+    const onHide = () => {
+      if (dirtyRef.current) void persist(true);
+    };
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onHide);
 
     return () => {
       stopWatch();
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onHide);
+      if (dirtyRef.current) void persist(true);
       if (saveTimerRef.current) clearInterval(saveTimerRef.current);
       saveTimerRef.current = null;
       setTracking(false);
@@ -208,6 +228,7 @@ export function useLiveTracking(opts: {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, tripId]);
+
 
   const pause = () => {
     if (pausedRef.current || !enabled) return;
@@ -313,6 +334,8 @@ export function useLiveTracking(opts: {
 
     const { error: e } = await supabase.from("trips").update(patch).eq("id", tripId);
     if (e) throw e;
+    clearBeat(tripId);
+
     return { path: finalPath, distance_km: km, end_time: endIso };
   };
 

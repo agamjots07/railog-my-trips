@@ -31,6 +31,7 @@ type Props = {
   worldCopyJump?: boolean;
   onReady?: () => void;
   onFail?: () => void;
+  onMapClick?: (p: LatLng) => void;
 };
 
 /**
@@ -47,6 +48,7 @@ export function GoogleMapCanvas({
   style,
   onReady,
   onFail,
+  onMapClick,
 }: Props) {
   const { status, google } = useGoogleMaps();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -54,10 +56,13 @@ export function GoogleMapCanvas({
   const overlaysRef = useRef<any[]>([]);
   const infoRef = useRef<any>(null);
   const [mounted, setMounted] = useState(false);
+  const clickRef = useRef(onMapClick);
+  clickRef.current = onMapClick;
 
   useEffect(() => {
     if (status === "failed") onFail?.();
   }, [status, onFail]);
+
 
   // Init map once google is ready
   useEffect(() => {
@@ -77,6 +82,10 @@ export function GoogleMapCanvas({
       mapRef.current = m;
       infoRef.current = new google.maps.InfoWindow();
       m.addListener("tilesloaded", () => onReady?.());
+      m.addListener("click", (e: any) => {
+        if (!clickRef.current || !e?.latLng) return;
+        clickRef.current([e.latLng.lat(), e.latLng.lng()]);
+      });
       setMounted(true);
     } catch {
       onFail?.();

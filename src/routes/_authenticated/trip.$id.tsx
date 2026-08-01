@@ -4,13 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2 } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
+import { isRecordingActive, finalizeFromSaved } from "@/lib/liveRecovery";
+import { RouteBuilder } from "@/components/RouteBuilder";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { ShareTripCard } from "@/components/ShareTripCard";
 import { GoTrainCard } from "@/components/GoTrainCard";
 import { isGoTrip } from "@/lib/goTrains";
+
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
   head: () => ({ meta: [{ title: "Trip — Pencer" }] }),
@@ -35,11 +38,16 @@ function TripDetail() {
   const [trip, setTrip] = useState<Trip | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [recovery, setRecovery] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
       if (error) toast.error(error.message);
       setTrip(data);
+      // Interrupted recording: trip is still live but no tab is recording it.
+      if (data?.is_live && !data.end_time && !isRecordingActive(id)) setRecovery(true);
     });
   }, [id]);
 
@@ -61,13 +69,14 @@ function TripDetail() {
 
   const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive, paused, pausedMs, warmingUp, distanceKm: liveDistanceKm, togglePause } = useLiveTracking({
     tripId: id,
-    enabled: isLive,
+    enabled: isLive && !recovery,
     initialPath,
   });
 
   useEffect(() => {
     if (gpsError) toast.error(`GPS: ${gpsError}`);
   }, [gpsError]);
+
 
   if (trip === undefined) {
     return <div className="px-5 pt-10 text-muted-foreground">Loading…</div>;
@@ -185,6 +194,48 @@ function TripDetail() {
       <p className="mt-1.5 text-sm text-muted-foreground">
         {trip.origin} → {trip.destination}
       </p>
+
+      {recovery && (
+        <div className="mt-5 rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4">
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Recording interrupted</p>
+          </div>
+          <p className="mt-1.5 text-xs text-amber-200/80">
+            This trip was still recording when the app closed. {storedPath.length} GPS point
+            {storedPath.length === 1 ? "" : "s"} were saved.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setRecovery(false)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98]"
+            >
+              <Play className="h-4 w-4" /> Resume
+            </button>
+            <button
+              disabled={recovering}
+              onClick={async () => {
+                setRecovering(true);
+                try {
+                  const r = await finalizeFromSaved(trip.id);
+                  setTrip({ ...trip, is_live: false, end_time: r.end_time, distance_km: r.distance_km });
+                  setRecovery(false);
+                  toast.success("Trip finalized from saved points");
+                } catch (e) {
+                  toast.error((e as Error).message);
+                } finally {
+                  setRecovering(false);
+                }
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card py-3 text-sm font-bold active:scale-[0.98] disabled:opacity-60"
+            >
+              {recovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <StopCircle className="h-4 w-4" />}
+              Finalize
+            </button>
+          </div>
+        </div>
+      )}
+
 
       <div
         className="my-6 overflow-hidden rounded-3xl border border-white/[0.06]"
@@ -319,7 +370,7 @@ function TripDetail() {
         </div>
       )}
 
-      {isLive && (
+      {isLive && !recovery && (
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button
             onClick={togglePause}
@@ -363,6 +414,35 @@ function TripDetail() {
 
       {!isLive && (
         <button
+          onClick={() => setBuilding(true)}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card py-4 text-sm font-bold text-foreground transition active:scale-[0.98]"
+        >
+          <RouteIcon className="h-5 w-5" />
+          {storedPath.length >= 2 ? "Edit route & top speed" : "Add route"}
+        </button>
+      )}
+
+      {building && (
+        <RouteBuilder
+          tripId={trip.id}
+          mode={mode}
+          center={origin ?? storedPath[0] ?? null}
+          initialPath={storedPath}
+          initialTopSpeed={trip.max_speed_kmh}
+          onClose={() => setBuilding(false)}
+          onSaved={({ path: p, distanceKm: km, maxSpeed }) =>
+            setTrip({
+              ...trip,
+              route_geometry: p as unknown as Trip["route_geometry"],
+              distance_km: km,
+              max_speed_kmh: maxSpeed ?? trip.max_speed_kmh,
+            })
+          }
+        />
+      )}
+
+      {!isLive && (
+        <button
           onClick={() => setSharing(true)}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98]"
           style={{ boxShadow: "var(--shadow-glow)" }}
@@ -370,6 +450,7 @@ function TripDetail() {
           <Share2 className="h-5 w-5" /> Share this trip
         </button>
       )}
+
 
       {sharing && (
         <ShareTripCard trip={trip} path={path} vehicle={vehicle} onClose={() => setSharing(false)} />

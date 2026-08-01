@@ -3,13 +3,14 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, LogOut, ArrowRight } from "lucide-react";
+import { Train, LogOut, ArrowRight, AlertTriangle } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
 import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
 import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { useAchievementQueue } from "@/lib/useAchievementQueue";
 import { EmptyState } from "@/components/EmptyState";
+import { isRecordingActive } from "@/lib/liveRecovery";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({ meta: [{ title: "Your trips — Pencer" }] }),
@@ -51,6 +52,12 @@ function FeedPage() {
     const km = trips.reduce((a, t) => a + (t.distance_km ?? 0), 0);
     return { count: trips.length, km };
   }, [trips]);
+
+  // A trip still flagged live with no tab actively recording = crashed session.
+  const interrupted = useMemo(
+    () => trips?.find((t) => t.is_live && !t.end_time && !isRecordingActive(t.id)) ?? null,
+    [trips],
+  );
 
   const { current: celebrating, dismiss } = useAchievementQueue(trips);
 
@@ -97,6 +104,23 @@ function FeedPage() {
         </div>
       )}
 
+      {interrupted && (
+        <Link
+          to="/trip/$id"
+          params={{ id: interrupted.id }}
+          className="mb-4 block rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4"
+        >
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Recording interrupted</p>
+          </div>
+          <p className="mt-1.5 text-xs text-amber-200/80">
+            {interrupted.route_name || `${interrupted.origin} → ${interrupted.destination}`} — tap to
+            resume or finalize from saved points.
+          </p>
+        </Link>
+      )}
+
       {trips?.length === 0 && (
         <EmptyState
           icon={Train}
@@ -107,6 +131,7 @@ function FeedPage() {
           ctaTo="/new"
         />
       )}
+
 
       <div className="space-y-3">
         {trips?.map((t) => (

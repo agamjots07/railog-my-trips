@@ -1,0 +1,209 @@
+import { useMemo, useState } from "react";
+import { MapContainer, TileLayer, Polyline, CircleMarker, useMapEvents } from "react-leaflet";
+import { supabase } from "@/integrations/supabase/client";
+import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
+import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
+import { MODE_COLOR, type TripMode } from "@/lib/modes";
+import { haversineKm } from "@/lib/geo";
+import { X, Undo2, Trash2, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+type LatLng = [number, number];
+
+function totalKm(path: LatLng[]) {
+  let km = 0;
+  for (let i = 1; i < path.length; i++) km += haversineKm(path[i - 1], path[i]);
+  return km;
+}
+
+function LeafletClicks({ onAdd }: { onAdd: (p: LatLng) => void }) {
+  useMapEvents({
+    click(e) {
+      onAdd([e.latlng.lat, e.latlng.lng]);
+    },
+  });
+  return null;
+}
+
+export function RouteBuilder({
+  tripId,
+  mode,
+  center,
+  initialPath = [],
+  initialTopSpeed,
+  onClose,
+  onSaved,
+}: {
+  tripId: string;
+  mode: TripMode;
+  center?: LatLng | null;
+  initialPath?: LatLng[];
+  initialTopSpeed?: number | null;
+  onClose: () => void;
+  onSaved: (v: { path: LatLng[]; distanceKm: number; maxSpeed: number | null }) => void;
+}) {
+  const [points, setPoints] = useState<LatLng[]>(initialPath);
+  const [topSpeed, setTopSpeed] = useState<string>(
+    initialTopSpeed != null ? String(Math.round(initialTopSpeed)) : "",
+  );
+  const [style, setStyle] = useState<MapStyle>("satellite");
+  const [saving, setSaving] = useState(false);
+  const { provider, forceLeaflet } = useMapProvider();
+
+  const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
+  const km = useMemo(() => totalKm(points), [points]);
+  const start: LatLng = center ?? points[0] ?? [36.1699, -115.1398];
+
+  const add = (p: LatLng) => setPoints((prev) => [...prev, p]);
+
+  const save = async () => {
+    if (points.length < 2) {
+      toast.error("Drop at least two waypoints");
+      return;
+    }
+    setSaving(true);
+    const parsed = topSpeed.trim() === "" ? null : Number(topSpeed);
+    const maxSpeed =
+      parsed != null && Number.isFinite(parsed) && parsed > 0 && parsed <= 400 ? parsed : null;
+    const distanceKm = totalKm(points);
+    const { error } = await supabase
+      .from("trips")
+      .update({
+        route_geometry: points as unknown as never,
+        distance_km: distanceKm,
+        ...(maxSpeed != null ? { max_speed_kmh: maxSpeed } : {}),
+      })
+      .eq("id", tripId);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success("Route saved");
+    onSaved({ path: points, distanceKm, maxSpeed });
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex flex-col bg-background">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+        <button
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+          Trace route
+        </p>
+        <div className="w-9" />
+      </div>
+
+      <div className="relative flex-1">
+        {provider === "google" ? (
+          <GoogleMapCanvas
+            style={style}
+            onFail={forceLeaflet}
+            onMapClick={add}
+            fit={false}
+            center={start}
+            zoom={points.length > 1 ? 8 : 9}
+            routes={points.length > 1 ? [{ id: "draft", points, color, weight: 4 }] : []}
+            stops={points.map((p) => ({ pos: p, color }))}
+          />
+        ) : (
+          <MapContainer center={start} zoom={9} style={{ height: "100%", width: "100%" }}>
+            {style === "satellite" ? (
+              <TileLayer
+                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                attribution="Tiles &copy; Esri"
+                maxZoom={19}
+              />
+            ) : (
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                subdomains="abcd"
+                attribution="&copy; OpenStreetMap &copy; CARTO"
+                maxZoom={19}
+              />
+            )}
+            <LeafletClicks onAdd={add} />
+            {points.length > 1 && (
+              <Polyline positions={points} pathOptions={{ color, weight: 4, opacity: 0.95 }} />
+            )}
+            {points.map((p, i) => (
+              <CircleMarker
+                key={i}
+                center={p}
+                radius={6}
+                pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
+              />
+            ))}
+          </MapContainer>
+        )}
+        <div className="absolute right-3 top-3 z-[400]">
+          <MapStyleToggle value={style} onChange={setStyle} />
+        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
+          <span className="rounded-full bg-background/80 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
+            Tap the map to drop waypoints along your path
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-3 border-t border-white/[0.06] bg-card px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Waypoints
+            </p>
+            <p className="mt-1 font-mono text-lg font-bold tabular-nums">{points.length}</p>
+          </div>
+          <div className="flex-1">
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Distance
+            </p>
+            <p className="mt-1 font-mono text-lg font-bold tabular-nums">{km.toFixed(1)} km</p>
+          </div>
+          <button
+            onClick={() => setPoints((p) => p.slice(0, -1))}
+            disabled={points.length === 0}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-background text-muted-foreground disabled:opacity-40"
+            aria-label="Undo"
+          >
+            <Undo2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setPoints([])}
+            disabled={points.length === 0}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-background text-muted-foreground disabled:opacity-40"
+            aria-label="Clear"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
+
+        <label className="block">
+          <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            Top speed (km/h, optional)
+          </span>
+          <input
+            value={topSpeed}
+            onChange={(e) => setTopSpeed(e.target.value.replace(/[^0-9.]/g, ""))}
+            inputMode="decimal"
+            placeholder="e.g. 110"
+            className="mt-1.5 w-full rounded-2xl border border-white/[0.08] bg-background px-4 py-3 font-mono text-sm outline-none focus:border-primary/60"
+          />
+        </label>
+
+        <button
+          onClick={save}
+          disabled={saving}
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+          style={{ boxShadow: "var(--shadow-glow)" }}
+        >
+          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
+          Save route
+        </button>
+      </div>
+    </div>
+  );
+}
