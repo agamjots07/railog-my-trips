@@ -195,6 +195,48 @@ function TripDetail() {
         {trip.origin} → {trip.destination}
       </p>
 
+      {recovery && (
+        <div className="mt-5 rounded-3xl border border-amber-400/30 bg-amber-400/10 p-4">
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertTriangle className="h-4 w-4" strokeWidth={2.5} />
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Recording interrupted</p>
+          </div>
+          <p className="mt-1.5 text-xs text-amber-200/80">
+            This trip was still recording when the app closed. {storedPath.length} GPS point
+            {storedPath.length === 1 ? "" : "s"} were saved.
+          </p>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setRecovery(false)}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98]"
+            >
+              <Play className="h-4 w-4" /> Resume
+            </button>
+            <button
+              disabled={recovering}
+              onClick={async () => {
+                setRecovering(true);
+                try {
+                  const r = await finalizeFromSaved(trip.id);
+                  setTrip({ ...trip, is_live: false, end_time: r.end_time, distance_km: r.distance_km });
+                  setRecovery(false);
+                  toast.success("Trip finalized from saved points");
+                } catch (e) {
+                  toast.error((e as Error).message);
+                } finally {
+                  setRecovering(false);
+                }
+              }}
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card py-3 text-sm font-bold active:scale-[0.98] disabled:opacity-60"
+            >
+              {recovering ? <Loader2 className="h-4 w-4 animate-spin" /> : <StopCircle className="h-4 w-4" />}
+              Finalize
+            </button>
+          </div>
+        </div>
+      )}
+
+
       <div
         className="my-6 overflow-hidden rounded-3xl border border-white/[0.06]"
         style={{ boxShadow: "var(--shadow-card)" }}
