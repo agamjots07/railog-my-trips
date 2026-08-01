@@ -48,6 +48,7 @@ export function GoogleMapCanvas({
   style,
   onReady,
   onFail,
+  onMapClick,
 }: Props) {
   const { status, google } = useGoogleMaps();
   const hostRef = useRef<HTMLDivElement>(null);
@@ -55,10 +56,13 @@ export function GoogleMapCanvas({
   const overlaysRef = useRef<any[]>([]);
   const infoRef = useRef<any>(null);
   const [mounted, setMounted] = useState(false);
+  const clickRef = useRef(onMapClick);
+  clickRef.current = onMapClick;
 
   useEffect(() => {
     if (status === "failed") onFail?.();
   }, [status, onFail]);
+
 
   // Init map once google is ready
   useEffect(() => {
