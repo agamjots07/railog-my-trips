@@ -334,6 +334,8 @@ export function useLiveTracking(opts: {
 
     const { error: e } = await supabase.from("trips").update(patch).eq("id", tripId);
     if (e) throw e;
+    clearBeat(tripId);
+
     return { path: finalPath, distance_km: km, end_time: endIso };
   };
 
