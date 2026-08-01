@@ -370,7 +370,7 @@ function TripDetail() {
         </div>
       )}
 
-      {isLive && (
+      {isLive && !recovery && (
         <div className="mt-5 grid grid-cols-2 gap-3">
           <button
             onClick={togglePause}
