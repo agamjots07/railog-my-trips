@@ -38,11 +38,16 @@ function TripDetail() {
   const [trip, setTrip] = useState<Trip | null | undefined>(undefined);
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [sharing, setSharing] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [recovery, setRecovery] = useState(false);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
       if (error) toast.error(error.message);
       setTrip(data);
+      // Interrupted recording: trip is still live but no tab is recording it.
+      if (data?.is_live && !data.end_time && !isRecordingActive(id)) setRecovery(true);
     });
   }, [id]);
 
@@ -64,13 +69,14 @@ function TripDetail() {
 
   const { path: livePath, tracking, error: gpsError, finalize, speedKmh, wakeLockActive, paused, pausedMs, warmingUp, distanceKm: liveDistanceKm, togglePause } = useLiveTracking({
     tripId: id,
-    enabled: isLive,
+    enabled: isLive && !recovery,
     initialPath,
   });
 
   useEffect(() => {
     if (gpsError) toast.error(`GPS: ${gpsError}`);
   }, [gpsError]);
+
 
   if (trip === undefined) {
     return <div className="px-5 pt-10 text-muted-foreground">Loading…</div>;
