@@ -82,6 +82,10 @@ export function GoogleMapCanvas({
       mapRef.current = m;
       infoRef.current = new google.maps.InfoWindow();
       m.addListener("tilesloaded", () => onReady?.());
+      m.addListener("click", (e: any) => {
+        if (!clickRef.current || !e?.latLng) return;
+        clickRef.current([e.latLng.lat(), e.latLng.lng()]);
+      });
       setMounted(true);
     } catch {
       onFail?.();
