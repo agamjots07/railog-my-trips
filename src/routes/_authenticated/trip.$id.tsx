@@ -181,6 +181,15 @@ function TripDetail() {
         <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           {MODE_LABEL[mode] ?? trip.mode}
         </span>
+        <button
+          type="button"
+          onClick={() => setEditingMode((v) => !v)}
+          aria-label="Change transport mode"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-foreground"
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+        </button>
+
         {isLive && (
           paused ? (
             <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
