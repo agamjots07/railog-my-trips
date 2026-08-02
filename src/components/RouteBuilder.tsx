@@ -83,7 +83,10 @@ export function RouteBuilder({
 
   return (
     <div className="fixed inset-0 z-[1000] flex flex-col bg-background">
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+      <div
+        className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 pb-3"
+        style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+      >
         <button
           onClick={onClose}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground"
@@ -97,7 +100,7 @@ export function RouteBuilder({
         <div className="w-9" />
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative min-h-[35vh] flex-1">
         {provider === "google" ? (
           <GoogleMapCanvas
             style={style}
@@ -149,7 +152,10 @@ export function RouteBuilder({
         </div>
       </div>
 
-      <div className="space-y-3 border-t border-white/[0.06] bg-card px-4 py-4">
+      <div
+        className="max-h-[55vh] shrink-0 space-y-3 overflow-y-auto border-t border-white/[0.06] bg-card px-4 pt-4"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">

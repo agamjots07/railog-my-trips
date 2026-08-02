@@ -78,6 +78,9 @@ function NewTrip() {
 
   const liveOnly = isLiveOnly(mode);
   const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
+  // Bus live rides record raw GPS — no stop selection required.
+  const busLive = mode === "bus" && logType === "live";
+  const freeform = liveOnly || busLive;
 
   // Force live for live-only modes
   useEffect(() => {
@@ -159,15 +162,15 @@ function NewTrip() {
       let originText = origin;
       let destText = destination;
       let nameText = routeName;
-      if (liveOnly) {
+      if (freeform) {
         const fallback = label || `${MODE_LABEL[mode]} ride`;
         originText = label || "Live start";
         destText = "Live";
         nameText = nameText || fallback;
       }
 
-      const o = isStationMode ? originStation : null;
-      const d = isStationMode ? destinationStation : null;
+      const o = isStationMode && !busLive ? originStation : null;
+      const d = isStationMode && !busLive ? destinationStation : null;
       const distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
 
       let geometry: [number, number][] | null = null;
@@ -316,7 +319,7 @@ function NewTrip() {
           </div>
         )}
 
-        {liveOnly && (
+        {freeform && (
           <div
             className="flex items-center gap-3 rounded-2xl border px-4 py-3"
             style={{
@@ -333,14 +336,16 @@ function NewTrip() {
             <div>
               <p className="text-[13px] font-bold leading-tight">Live GPS recording</p>
               <p className="text-[11px] text-muted-foreground">
-                {MODE_LABEL[mode]} rides record your path in real-time.
+                {busLive
+                  ? "No stop selection needed — just start and go."
+                  : `${MODE_LABEL[mode]} rides record your path in real-time.`}
               </p>
             </div>
           </div>
         )}
 
         {/* Station mode form */}
-        {isStationMode && (
+        {isStationMode && !busLive && (
           <SectionCard>
             <Field label="Origin">
               <StationAutocomplete
@@ -388,7 +393,7 @@ function NewTrip() {
         )}
 
         {/* Live-only label + vehicle */}
-        {liveOnly && (
+        {freeform && (
           <SectionCard>
             <Field label="Label (optional)">
               <input

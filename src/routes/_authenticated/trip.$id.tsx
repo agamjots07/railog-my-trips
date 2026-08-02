@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
-import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle } from "lucide-react";
+import { fmtDate, fmtDuration, fmtClock } from "@/lib/geo";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { isRecordingActive, finalizeFromSaved } from "@/lib/liveRecovery";
@@ -41,6 +41,8 @@ function TripDetail() {
   const [building, setBuilding] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [editingMode, setEditingMode] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
@@ -129,6 +131,23 @@ function TripDetail() {
     nav({ to: "/" });
   };
 
+  // Change only the transport mode — every other field is left untouched.
+  const changeMode = async (next: TripMode) => {
+    if (next === mode) {
+      setEditingMode(false);
+      return;
+    }
+    setSavingMode(true);
+    const { error } = await supabase.from("trips").update({ mode: next }).eq("id", trip.id);
+    setSavingMode(false);
+    if (error) return toast.error(error.message);
+    setTrip({ ...trip, mode: next });
+    setEditingMode(false);
+    toast.success(`Changed to ${MODE_LABEL[next]}`);
+  };
+
+
+
   return (
     <div className="relative px-5 pt-6 pb-10">
       <div
@@ -162,6 +181,15 @@ function TripDetail() {
         <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           {MODE_LABEL[mode] ?? trip.mode}
         </span>
+        <button
+          type="button"
+          onClick={() => setEditingMode((v) => !v)}
+          aria-label="Change transport mode"
+          className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground transition hover:text-foreground"
+        >
+          <Pencil className="h-3 w-3" strokeWidth={2.5} />
+        </button>
+
         {isLive && (
           paused ? (
             <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300">
@@ -187,6 +215,39 @@ function TripDetail() {
           </span>
         )}
       </div>
+
+      {editingMode && (
+        <div className="mb-4 rounded-3xl border border-white/[0.06] bg-card/60 p-3 backdrop-blur-xl">
+          <p className="px-1 pb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            Transport mode
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {(Object.keys(MODE_LABEL) as TripMode[]).map((m) => {
+              const MIcon = MODE_ICON[m];
+              const active = m === mode;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={savingMode}
+                  onClick={() => changeMode(m)}
+                  className={`flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 text-[10px] font-semibold transition disabled:opacity-50 ${
+                    active
+                      ? "border-primary/50 bg-primary/15 text-primary"
+                      : "border-white/[0.06] text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <MIcon className="h-4 w-4" strokeWidth={2.25} />
+                  {MODE_LABEL[m]}
+                  {active && <Check className="h-3 w-3" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
 
       <h1 className="text-[26px] font-bold leading-tight tracking-tight">
         {trip.route_name || `${trip.origin} → ${trip.destination}`}
@@ -262,6 +323,15 @@ function TripDetail() {
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
+
+      {mode === "taxi" && !isLive && (
+        <p className="mt-3 text-center text-[12px] font-semibold text-muted-foreground">
+          Started {fmtClock(trip.start_time)}
+          {trip.end_time ? ` — Ended ${fmtClock(trip.end_time)}` : ""}
+        </p>
+      )}
+
+
 
       {isLive ? (
         <div
