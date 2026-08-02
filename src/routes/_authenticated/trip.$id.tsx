@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration } from "@/lib/geo";
-import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle } from "lucide-react";
+import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { isRecordingActive, finalizeFromSaved } from "@/lib/liveRecovery";
