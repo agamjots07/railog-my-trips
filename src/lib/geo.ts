@@ -45,3 +45,12 @@ export function fmtDate(iso: string): string {
     year: "numeric",
   });
 }
+
+/** Clock time only, e.g. "2:34 PM". */
+export function fmtClock(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
