@@ -100,7 +100,7 @@ export function RouteBuilder({
         <div className="w-9" />
       </div>
 
-      <div className="relative flex-1">
+      <div className="relative min-h-[35vh] flex-1">
         {provider === "google" ? (
           <GoogleMapCanvas
             style={style}
