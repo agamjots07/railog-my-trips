@@ -319,7 +319,7 @@ function NewTrip() {
           </div>
         )}
 
-        {liveOnly && (
+        {freeform && (
           <div
             className="flex items-center gap-3 rounded-2xl border px-4 py-3"
             style={{
