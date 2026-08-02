@@ -149,7 +149,10 @@ export function RouteBuilder({
         </div>
       </div>
 
-      <div className="space-y-3 border-t border-white/[0.06] bg-card px-4 py-4">
+      <div
+        className="max-h-[55vh] shrink-0 space-y-3 overflow-y-auto border-t border-white/[0.06] bg-card px-4 pt-4"
+        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+      >
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
