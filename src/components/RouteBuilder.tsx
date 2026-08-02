@@ -97,7 +97,14 @@ export function RouteBuilder({
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Trace route
         </p>
-        <div className="w-9" />
+        <button
+          onClick={save}
+          disabled={saving || points.length < 2}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          Done
+        </button>
       </div>
 
       <div className="relative min-h-[35vh] flex-1">
@@ -199,16 +206,6 @@ export function RouteBuilder({
             className="mt-1.5 w-full rounded-2xl border border-white/[0.08] bg-background px-4 py-3 font-mono text-sm outline-none focus:border-primary/60"
           />
         </label>
-
-        <button
-          onClick={save}
-          disabled={saving}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
-          style={{ boxShadow: "var(--shadow-glow)" }}
-        >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-          Save route
-        </button>
       </div>
     </div>
   );
