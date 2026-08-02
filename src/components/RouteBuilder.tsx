@@ -83,7 +83,10 @@ export function RouteBuilder({
 
   return (
     <div className="fixed inset-0 z-[1000] flex flex-col bg-background">
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+      <div
+        className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 pb-3"
+        style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+      >
         <button
           onClick={onClose}
           className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground"
