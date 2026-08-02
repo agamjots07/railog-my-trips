@@ -131,6 +131,23 @@ function TripDetail() {
     nav({ to: "/" });
   };
 
+  // Change only the transport mode — every other field is left untouched.
+  const changeMode = async (next: TripMode) => {
+    if (next === mode) {
+      setEditingMode(false);
+      return;
+    }
+    setSavingMode(true);
+    const { error } = await supabase.from("trips").update({ mode: next }).eq("id", trip.id);
+    setSavingMode(false);
+    if (error) return toast.error(error.message);
+    setTrip({ ...trip, mode: next });
+    setEditingMode(false);
+    toast.success(`Changed to ${MODE_LABEL[next]}`);
+  };
+
+
+
   return (
     <div className="relative px-5 pt-6 pb-10">
       <div
