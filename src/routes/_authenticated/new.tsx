@@ -162,15 +162,15 @@ function NewTrip() {
       let originText = origin;
       let destText = destination;
       let nameText = routeName;
-      if (liveOnly) {
+      if (freeform) {
         const fallback = label || `${MODE_LABEL[mode]} ride`;
         originText = label || "Live start";
         destText = "Live";
         nameText = nameText || fallback;
       }
 
-      const o = isStationMode ? originStation : null;
-      const d = isStationMode ? destinationStation : null;
+      const o = isStationMode && !busLive ? originStation : null;
+      const d = isStationMode && !busLive ? destinationStation : null;
       const distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
 
       let geometry: [number, number][] | null = null;
