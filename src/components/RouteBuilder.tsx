@@ -206,16 +206,6 @@ export function RouteBuilder({
             className="mt-1.5 w-full rounded-2xl border border-white/[0.08] bg-background px-4 py-3 font-mono text-sm outline-none focus:border-primary/60"
           />
         </label>
-
-        <button
-          onClick={save}
-          disabled={saving}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-sm font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
-          style={{ boxShadow: "var(--shadow-glow)" }}
-        >
-          {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
-          Save route
-        </button>
       </div>
     </div>
   );
