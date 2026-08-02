@@ -336,7 +336,9 @@ function NewTrip() {
             <div>
               <p className="text-[13px] font-bold leading-tight">Live GPS recording</p>
               <p className="text-[11px] text-muted-foreground">
-                {MODE_LABEL[mode]} rides record your path in real-time.
+                {busLive
+                  ? "No stop selection needed — just start and go."
+                  : `${MODE_LABEL[mode]} rides record your path in real-time.`}
               </p>
             </div>
           </div>
