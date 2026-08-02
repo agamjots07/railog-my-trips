@@ -216,6 +216,39 @@ function TripDetail() {
         )}
       </div>
 
+      {editingMode && (
+        <div className="mb-4 rounded-3xl border border-white/[0.06] bg-card/60 p-3 backdrop-blur-xl">
+          <p className="px-1 pb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            Transport mode
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {(Object.keys(MODE_LABEL) as TripMode[]).map((m) => {
+              const MIcon = MODE_ICON[m];
+              const active = m === mode;
+              return (
+                <button
+                  key={m}
+                  type="button"
+                  disabled={savingMode}
+                  onClick={() => changeMode(m)}
+                  className={`flex flex-col items-center gap-1 rounded-2xl border px-1 py-2.5 text-[10px] font-semibold transition disabled:opacity-50 ${
+                    active
+                      ? "border-primary/50 bg-primary/15 text-primary"
+                      : "border-white/[0.06] text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <MIcon className="h-4 w-4" strokeWidth={2.25} />
+                  {MODE_LABEL[m]}
+                  {active && <Check className="h-3 w-3" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+
+
       <h1 className="text-[26px] font-bold leading-tight tracking-tight">
         {trip.route_name || `${trip.origin} → ${trip.destination}`}
       </h1>
