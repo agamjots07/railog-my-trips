@@ -393,7 +393,7 @@ function NewTrip() {
         )}
 
         {/* Live-only label + vehicle */}
-        {liveOnly && (
+        {freeform && (
           <SectionCard>
             <Field label="Label (optional)">
               <input
