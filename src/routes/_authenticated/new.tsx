@@ -345,7 +345,7 @@ function NewTrip() {
         )}
 
         {/* Station mode form */}
-        {isStationMode && (
+        {isStationMode && !busLive && (
           <SectionCard>
             <Field label="Origin">
               <StationAutocomplete
