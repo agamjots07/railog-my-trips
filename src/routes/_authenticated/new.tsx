@@ -78,6 +78,9 @@ function NewTrip() {
 
   const liveOnly = isLiveOnly(mode);
   const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
+  // Bus live rides record raw GPS — no stop selection required.
+  const busLive = mode === "bus" && logType === "live";
+  const freeform = liveOnly || busLive;
 
   // Force live for live-only modes
   useEffect(() => {
