@@ -324,6 +324,15 @@ function TripDetail() {
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
+      {mode === "taxi" && !isLive && (
+        <p className="mt-3 text-center text-[12px] font-semibold text-muted-foreground">
+          Started {fmtClock(trip.start_time)}
+          {trip.end_time ? ` — Ended ${fmtClock(trip.end_time)}` : ""}
+        </p>
+      )}
+
+
+
       {isLive ? (
         <div
           className="mt-5 flex items-center gap-4 rounded-3xl border border-white/[0.06] bg-card p-5"
