@@ -97,7 +97,14 @@ export function RouteBuilder({
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Trace route
         </p>
-        <div className="w-9" />
+        <button
+          onClick={save}
+          disabled={saving || points.length < 2}
+          className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          Done
+        </button>
       </div>
 
       <div className="relative min-h-[35vh] flex-1">
