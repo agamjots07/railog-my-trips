@@ -41,6 +41,8 @@ function TripDetail() {
   const [building, setBuilding] = useState(false);
   const [recovery, setRecovery] = useState(false);
   const [recovering, setRecovering] = useState(false);
+  const [editingMode, setEditingMode] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
