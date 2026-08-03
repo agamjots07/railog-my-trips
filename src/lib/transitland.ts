@@ -23,6 +23,7 @@ const AGENCY_LABEL: Record<string, string> = {
   tif: "Toronto Island Ferry",
   tews: "Toronto East-West Water Shuttle",
   wif: "Wolfe Island Ferry",
+  pxs: "PHX Sky Train",
   bcf: "BC Ferries",
 };
 
