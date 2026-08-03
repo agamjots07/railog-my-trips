@@ -187,6 +187,13 @@ function JourneyMapPage() {
                 opacity={0.85}
               />
             </>
+          ) : mapStyle === "road" ? (
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              attribution="&copy; OpenStreetMap &copy; CARTO"
+              maxZoom={19}
+            />
           ) : (
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

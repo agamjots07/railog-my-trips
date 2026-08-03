@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DARK_STYLE, useGoogleMaps } from "@/lib/useGoogleMaps";
 
 export type LatLng = [number, number];
-export type MapStyle = "satellite" | "dark";
+export type MapStyle = "satellite" | "dark" | "road";
 
 export type MapRoute = {
   id: string;
@@ -63,6 +63,9 @@ export function GoogleMapCanvas({
     if (status === "failed") onFail?.();
   }, [status, onFail]);
 
+  const readyRef = useRef(onReady);
+  readyRef.current = onReady;
+  const quietTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Init map once google is ready
   useEffect(() => {
@@ -81,7 +84,14 @@ export function GoogleMapCanvas({
       });
       mapRef.current = m;
       infoRef.current = new google.maps.InfoWindow();
-      m.addListener("tilesloaded", () => onReady?.());
+      // Fire onReady only after tile loading + camera movement has settled,
+      // so screenshots never capture half-loaded tiles.
+      const settle = () => {
+        if (quietTimer.current) clearTimeout(quietTimer.current);
+        quietTimer.current = setTimeout(() => readyRef.current?.(), 700);
+      };
+      m.addListener("tilesloaded", settle);
+      m.addListener("idle", settle);
       m.addListener("click", (e: any) => {
         if (!clickRef.current || !e?.latLng) return;
         clickRef.current([e.latLng.lat(), e.latLng.lng()]);
@@ -92,6 +102,12 @@ export function GoogleMapCanvas({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status, google]);
+
+  useEffect(() => {
+    return () => {
+      if (quietTimer.current) clearTimeout(quietTimer.current);
+    };
+  }, []);
 
   // React to style toggle
   useEffect(() => {
