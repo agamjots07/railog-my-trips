@@ -166,6 +166,32 @@ function TripDetail() {
     toast.success(`Changed to ${MODE_LABEL[next]}`);
   };
 
+  const openTimeEditor = () => {
+    setStartInput(toLocalInput(trip.start_time));
+    setEndInput(toLocalInput(trip.end_time));
+    setEditingTime(true);
+  };
+
+  // Change only the date/time fields — distance, route and notes are untouched.
+  const saveTimes = async () => {
+    const start = fromLocalInput(startInput);
+    if (!start) return toast.error("Pick a valid start date and time");
+    const end = fromLocalInput(endInput);
+    if (end && new Date(end).getTime() < new Date(start).getTime()) {
+      return toast.error("End time must be after the start time");
+    }
+    setSavingTime(true);
+    const { error } = await supabase
+      .from("trips")
+      .update({ start_time: start, end_time: end })
+      .eq("id", trip.id);
+    setSavingTime(false);
+    if (error) return toast.error(error.message);
+    setTrip({ ...trip, start_time: start, end_time: end });
+    setEditingTime(false);
+    toast.success("Date & time updated");
+  };
+
 
 
   return (
