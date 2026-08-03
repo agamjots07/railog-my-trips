@@ -32,6 +32,22 @@ function parsePath(geom: Trip["route_geometry"]): LatLng[] {
   );
 }
 
+// <input type="datetime-local"> works in local time with no timezone suffix.
+function toLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fromLocalInput(value: string): string | null {
+  if (!value) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+
 function TripDetail() {
   const { id } = Route.useParams();
   const nav = useNavigate();
@@ -43,6 +59,10 @@ function TripDetail() {
   const [recovering, setRecovering] = useState(false);
   const [editingMode, setEditingMode] = useState(false);
   const [savingMode, setSavingMode] = useState(false);
+  const [editingTime, setEditingTime] = useState(false);
+  const [savingTime, setSavingTime] = useState(false);
+  const [startInput, setStartInput] = useState("");
+  const [endInput, setEndInput] = useState("");
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
@@ -144,6 +164,32 @@ function TripDetail() {
     setTrip({ ...trip, mode: next });
     setEditingMode(false);
     toast.success(`Changed to ${MODE_LABEL[next]}`);
+  };
+
+  const openTimeEditor = () => {
+    setStartInput(toLocalInput(trip.start_time));
+    setEndInput(toLocalInput(trip.end_time));
+    setEditingTime(true);
+  };
+
+  // Change only the date/time fields — distance, route and notes are untouched.
+  const saveTimes = async () => {
+    const start = fromLocalInput(startInput);
+    if (!start) return toast.error("Pick a valid start date and time");
+    const end = fromLocalInput(endInput);
+    if (end && new Date(end).getTime() < new Date(start).getTime()) {
+      return toast.error("End time must be after the start time");
+    }
+    setSavingTime(true);
+    const { error } = await supabase
+      .from("trips")
+      .update({ start_time: start, end_time: end })
+      .eq("id", trip.id);
+    setSavingTime(false);
+    if (error) return toast.error(error.message);
+    setTrip({ ...trip, start_time: start, end_time: end });
+    setEditingTime(false);
+    toast.success("Date & time updated");
   };
 
 
@@ -329,6 +375,57 @@ function TripDetail() {
           Started {fmtClock(trip.start_time)}
           {trip.end_time ? ` — Ended ${fmtClock(trip.end_time)}` : ""}
         </p>
+      )}
+
+      {!isLive && (
+        editingTime ? (
+          <div className="mt-3 rounded-3xl border border-white/[0.06] bg-card/60 p-4 backdrop-blur-xl">
+            <p className="pb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Edit date & time
+            </p>
+            <label className="block text-[11px] font-semibold text-muted-foreground">
+              Start
+              <input
+                type="datetime-local"
+                value={startInput}
+                onChange={(e) => setStartInput(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-white/[0.08] bg-background px-3 py-2.5 text-sm font-semibold text-foreground"
+              />
+            </label>
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">
+              End
+              <input
+                type="datetime-local"
+                value={endInput}
+                onChange={(e) => setEndInput(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-white/[0.08] bg-background px-3 py-2.5 text-sm font-semibold text-foreground"
+              />
+            </label>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setEditingTime(false)}
+                className="rounded-2xl border border-white/[0.08] bg-card py-3 text-sm font-bold active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveTimes}
+                disabled={savingTime}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+              >
+                {savingTime ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={openTimeEditor}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card/60 py-3 text-xs font-bold text-muted-foreground transition active:scale-[0.98] hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit date & time
+          </button>
+        )
       )}
 
 
