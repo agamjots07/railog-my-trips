@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DARK_STYLE, useGoogleMaps } from "@/lib/useGoogleMaps";
 
 export type LatLng = [number, number];
-export type MapStyle = "satellite" | "dark";
+export type MapStyle = "satellite" | "dark" | "road";
 
 export type MapRoute = {
   id: string;
