@@ -127,6 +127,13 @@ export function RouteBuilder({
                 attribution="Tiles &copy; Esri"
                 maxZoom={19}
               />
+            ) : style === "road" ? (
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                subdomains="abcd"
+                attribution="&copy; OpenStreetMap &copy; CARTO"
+                maxZoom={19}
+              />
             ) : (
               <TileLayer
                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
