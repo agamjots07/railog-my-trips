@@ -59,6 +59,10 @@ function TripDetail() {
   const [recovering, setRecovering] = useState(false);
   const [editingMode, setEditingMode] = useState(false);
   const [savingMode, setSavingMode] = useState(false);
+  const [editingTime, setEditingTime] = useState(false);
+  const [savingTime, setSavingTime] = useState(false);
+  const [startInput, setStartInput] = useState("");
+  const [endInput, setEndInput] = useState("");
 
   useEffect(() => {
     supabase.from("trips").select("*").eq("id", id).maybeSingle().then(({ data, error }) => {
