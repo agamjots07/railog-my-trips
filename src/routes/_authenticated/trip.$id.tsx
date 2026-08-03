@@ -377,6 +377,57 @@ function TripDetail() {
         </p>
       )}
 
+      {!isLive && (
+        editingTime ? (
+          <div className="mt-3 rounded-3xl border border-white/[0.06] bg-card/60 p-4 backdrop-blur-xl">
+            <p className="pb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+              Edit date & time
+            </p>
+            <label className="block text-[11px] font-semibold text-muted-foreground">
+              Start
+              <input
+                type="datetime-local"
+                value={startInput}
+                onChange={(e) => setStartInput(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-white/[0.08] bg-background px-3 py-2.5 text-sm font-semibold text-foreground"
+              />
+            </label>
+            <label className="mt-3 block text-[11px] font-semibold text-muted-foreground">
+              End
+              <input
+                type="datetime-local"
+                value={endInput}
+                onChange={(e) => setEndInput(e.target.value)}
+                className="mt-1 w-full rounded-2xl border border-white/[0.08] bg-background px-3 py-2.5 text-sm font-semibold text-foreground"
+              />
+            </label>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setEditingTime(false)}
+                className="rounded-2xl border border-white/[0.08] bg-card py-3 text-sm font-bold active:scale-[0.98]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveTimes}
+                disabled={savingTime}
+                className="flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 text-sm font-bold text-primary-foreground active:scale-[0.98] disabled:opacity-60"
+              >
+                {savingTime ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={openTimeEditor}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-card/60 py-3 text-xs font-bold text-muted-foreground transition active:scale-[0.98] hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" /> Edit date & time
+          </button>
+        )
+      )}
+
 
 
       {isLive ? (
