@@ -157,12 +157,37 @@ export function ShareTripCard({
   }, [trip.origin, trip.destination, trip.origin_lat, trip.origin_lng, trip.destination_lat, trip.destination_lng, path]);
 
   const generate = async (): Promise<Blob | null> => {
-    if (!cardRef.current) return null;
-    const dataUrl = await toPng(cardRef.current, {
-      pixelRatio: 3,
-      cacheBust: true,
-      backgroundColor: "#0a0a0f",
-    });
+    const node = cardRef.current;
+    if (!node) return null;
+
+    // Wait for fonts and any still-decoding images (map tiles) before capture.
+    try {
+      await (document as any).fonts?.ready;
+    } catch {
+      /* ignore */
+    }
+    const imgs = Array.from(node.querySelectorAll("img")) as HTMLImageElement[];
+    await Promise.all(
+      imgs.map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              const done = () => resolve();
+              img.addEventListener("load", done, { once: true });
+              img.addEventListener("error", done, { once: true });
+              setTimeout(done, 3000);
+            }),
+      ),
+    );
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise((r) => setTimeout(r, 600));
+
+    const opts = { pixelRatio: 3, cacheBust: true, backgroundColor: "#0a0a0f" } as const;
+    // First pass warms html-to-image's resource cache; the second pass is the
+    // one that reliably contains fully rendered map tiles.
+    await toPng(node, opts);
+    await new Promise((r) => setTimeout(r, 250));
+    const dataUrl = await toPng(node, opts);
     const res = await fetch(dataUrl);
     return await res.blob();
   };
