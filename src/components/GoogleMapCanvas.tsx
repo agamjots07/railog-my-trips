@@ -35,6 +35,29 @@ type Props = {
 };
 
 /**
+ * Resolves once every <img> tile inside `node` has fully decoded and the tile
+ * count has stopped changing for a few consecutive polls (i.e. the visible map
+ * area is completely rendered). Falls back after `timeoutMs`.
+ */
+export async function waitForTilesLoaded(node: HTMLElement, timeoutMs = 20000): Promise<void> {
+  const start = Date.now();
+  let stable = 0;
+  let lastCount = -1;
+  while (Date.now() - start < timeoutMs) {
+    const imgs = Array.from(node.querySelectorAll("img")) as HTMLImageElement[];
+    const pending = imgs.filter((i) => !(i.complete && i.naturalWidth > 0));
+    if (pending.length === 0 && imgs.length > 0 && imgs.length === lastCount) {
+      stable += 1;
+      if (stable >= 4) return;
+    } else {
+      stable = 0;
+    }
+    lastCount = imgs.length;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+/**
  * Google Maps canvas. Fires onFail if google fails to load, so callers can
  * swap to a Leaflet fallback.
  */
