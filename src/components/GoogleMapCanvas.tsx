@@ -84,11 +84,16 @@ export function GoogleMapCanvas({
       });
       mapRef.current = m;
       infoRef.current = new google.maps.InfoWindow();
-      // Fire onReady only after tile loading + camera movement has settled,
-      // so screenshots never capture half-loaded tiles.
+      // Fire onReady only once tile loading + camera movement has settled AND
+      // every tile image inside the map host has fully decoded, so screenshots
+      // never capture half-loaded tiles.
       const settle = () => {
         if (quietTimer.current) clearTimeout(quietTimer.current);
-        quietTimer.current = setTimeout(() => readyRef.current?.(), 700);
+        quietTimer.current = setTimeout(() => {
+          const host = hostRef.current;
+          if (!host) return;
+          waitForTilesLoaded(host).then(() => readyRef.current?.());
+        }, 900);
       };
       m.addListener("tilesloaded", settle);
       m.addListener("idle", settle);
