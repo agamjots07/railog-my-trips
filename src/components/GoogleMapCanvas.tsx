@@ -35,6 +35,29 @@ type Props = {
 };
 
 /**
+ * Resolves once every <img> tile inside `node` has fully decoded and the tile
+ * count has stopped changing for a few consecutive polls (i.e. the visible map
+ * area is completely rendered). Falls back after `timeoutMs`.
+ */
+export async function waitForTilesLoaded(node: HTMLElement, timeoutMs = 20000): Promise<void> {
+  const start = Date.now();
+  let stable = 0;
+  let lastCount = -1;
+  while (Date.now() - start < timeoutMs) {
+    const imgs = Array.from(node.querySelectorAll("img")) as HTMLImageElement[];
+    const pending = imgs.filter((i) => !(i.complete && i.naturalWidth > 0));
+    if (pending.length === 0 && imgs.length > 0 && imgs.length === lastCount) {
+      stable += 1;
+      if (stable >= 4) return;
+    } else {
+      stable = 0;
+    }
+    lastCount = imgs.length;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+/**
  * Google Maps canvas. Fires onFail if google fails to load, so callers can
  * swap to a Leaflet fallback.
  */
@@ -84,11 +107,16 @@ export function GoogleMapCanvas({
       });
       mapRef.current = m;
       infoRef.current = new google.maps.InfoWindow();
-      // Fire onReady only after tile loading + camera movement has settled,
-      // so screenshots never capture half-loaded tiles.
+      // Fire onReady only once tile loading + camera movement has settled AND
+      // every tile image inside the map host has fully decoded, so screenshots
+      // never capture half-loaded tiles.
       const settle = () => {
         if (quietTimer.current) clearTimeout(quietTimer.current);
-        quietTimer.current = setTimeout(() => readyRef.current?.(), 700);
+        quietTimer.current = setTimeout(() => {
+          const host = hostRef.current;
+          if (!host) return;
+          waitForTilesLoaded(host).then(() => readyRef.current?.());
+        }, 900);
       };
       m.addListener("tilesloaded", settle);
       m.addListener("idle", settle);

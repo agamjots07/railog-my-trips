@@ -9,7 +9,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { reverseGeocode } from "@/lib/reverseGeocode";
-import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
+import { GoogleMapCanvas, useMapProvider, waitForTilesLoaded } from "@/components/GoogleMapCanvas";
 import { toast } from "sonner";
 
 
@@ -179,14 +179,18 @@ export function ShareTripCard({
             }),
       ),
     );
+    // Confirm every tile image in the card (map area included) is decoded and
+    // the tile set has stopped changing before capturing.
+    await waitForTilesLoaded(node, 25000);
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 1500));
 
     const opts = { pixelRatio: 3, cacheBust: true, backgroundColor: "#0a0a0f" } as const;
     // First pass warms html-to-image's resource cache; the second pass is the
     // one that reliably contains fully rendered map tiles.
     await toPng(node, opts);
-    await new Promise((r) => setTimeout(r, 250));
+    await waitForTilesLoaded(node, 8000);
+    await new Promise((r) => setTimeout(r, 900));
     const dataUrl = await toPng(node, opts);
     const res = await fetch(dataUrl);
     return await res.blob();
