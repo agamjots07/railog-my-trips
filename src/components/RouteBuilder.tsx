@@ -175,7 +175,7 @@ export function RouteBuilder({
             center={start}
             zoom={points.length > 1 ? 8 : 9}
             routes={points.length > 1 ? [{ id: "draft", points, color, weight: 4 }] : []}
-            stops={points.map((p) => ({ pos: p, color }))}
+            stops={stops}
           />
         ) : (
           <MapContainer center={start} zoom={9} style={{ height: "100%", width: "100%" }}>
@@ -204,12 +204,34 @@ export function RouteBuilder({
             {points.length > 1 && (
               <Polyline positions={points} pathOptions={{ color, weight: 4, opacity: 0.95 }} />
             )}
+            {points.slice(1).map((p, i) => (
+              <Marker
+                key={`mid-${i}`}
+                position={midpoint(points[i], p)}
+                draggable
+                icon={dotIcon(color, 12, true)}
+                eventHandlers={{
+                  click: () => insertAt(i + 1, midpoint(points[i], p)),
+                  dragend: (e: any) => {
+                    const ll = e.target.getLatLng();
+                    insertAt(i + 1, [ll.lat, ll.lng]);
+                  },
+                }}
+              />
+            ))}
             {points.map((p, i) => (
-              <CircleMarker
-                key={i}
-                center={p}
-                radius={6}
-                pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
+              <Marker
+                key={`wp-${i}`}
+                position={p}
+                draggable
+                icon={dotIcon(color, selected === i ? 18 : 14, false)}
+                eventHandlers={{
+                  click: () => setSelected((s) => (s === i ? null : i)),
+                  drag: (e: any) => {
+                    const ll = e.target.getLatLng();
+                    movePoint(i, [ll.lat, ll.lng]);
+                  },
+                }}
               />
             ))}
           </MapContainer>
