@@ -251,6 +251,29 @@ export function RouteBuilder({
         className="max-h-[55vh] shrink-0 space-y-3 overflow-y-auto border-t border-white/[0.06] bg-card px-4 pt-4"
         style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
       >
+        {selected != null && points[selected] && (
+          <div className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-3 py-2">
+            <span className="flex-1 text-xs font-semibold">
+              Waypoint {selected + 1}
+              <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                {points[selected][0].toFixed(4)}, {points[selected][1].toFixed(4)}
+              </span>
+            </span>
+            <button
+              onClick={() => insertAt(selected + 1, points[selected])}
+              className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[11px] font-bold"
+            >
+              Duplicate
+            </button>
+            <button
+              onClick={() => removeAt(selected)}
+              className="flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-[11px] font-bold text-destructive-foreground"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
