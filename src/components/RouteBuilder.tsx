@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { MapContainer, TileLayer, Polyline, CircleMarker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
 import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
@@ -16,6 +17,21 @@ function totalKm(path: LatLng[]) {
   return km;
 }
 
+function midpoint(a: LatLng, b: LatLng): LatLng {
+  return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+}
+
+function dotIcon(color: string, size: number, hollow: boolean) {
+  return L.divIcon({
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${
+      hollow ? "rgba(255,255,255,0.55)" : color
+    };border:2px solid ${hollow ? color : "#fff"};box-sizing:border-box"></div>`,
+  });
+}
+
 function LeafletClicks({ onAdd }: { onAdd: (p: LatLng) => void }) {
   useMapEvents({
     click(e) {
@@ -24,6 +40,7 @@ function LeafletClicks({ onAdd }: { onAdd: (p: LatLng) => void }) {
   });
   return null;
 }
+
 
 export function RouteBuilder({
   tripId,
@@ -43,6 +60,7 @@ export function RouteBuilder({
   onSaved: (v: { path: LatLng[]; distanceKm: number; maxSpeed: number | null }) => void;
 }) {
   const [points, setPoints] = useState<LatLng[]>(initialPath);
+  const [selected, setSelected] = useState<number | null>(null);
   const [topSpeed, setTopSpeed] = useState<string>(
     initialTopSpeed != null ? String(Math.round(initialTopSpeed)) : "",
   );
@@ -54,7 +72,47 @@ export function RouteBuilder({
   const km = useMemo(() => totalKm(points), [points]);
   const start: LatLng = center ?? points[0] ?? [36.1699, -115.1398];
 
-  const add = (p: LatLng) => setPoints((prev) => [...prev, p]);
+  const add = (p: LatLng) => {
+    setPoints((prev) => [...prev, p]);
+    setSelected(null);
+  };
+  const movePoint = (i: number, p: LatLng) =>
+    setPoints((prev) => prev.map((q, j) => (j === i ? p : q)));
+  const insertAt = (i: number, p: LatLng) => {
+    setPoints((prev) => [...prev.slice(0, i), p, ...prev.slice(i)]);
+    setSelected(i);
+  };
+  const removeAt = (i: number) => {
+    setPoints((prev) => prev.filter((_, j) => j !== i));
+    setSelected(null);
+  };
+
+  // Draggable waypoint handles + hollow "insert" handles at each segment midpoint.
+  const stops = useMemo(() => {
+    const out = points.map((p, i) => ({
+      pos: p,
+      color,
+      scale: selected === i ? 9 : 7,
+      draggable: true,
+      zIndex: 20,
+      title: `Waypoint ${i + 1}`,
+      onDragEnd: (np: LatLng) => movePoint(i, np),
+      onClick: () => setSelected((s) => (s === i ? null : i)),
+    }));
+    const mids = points.slice(1).map((p, i) => ({
+      pos: midpoint(points[i], p),
+      color,
+      scale: 5,
+      hollow: true,
+      draggable: true,
+      zIndex: 10,
+      title: "Drag or tap to insert a waypoint here",
+      onDragEnd: (np: LatLng) => insertAt(i + 1, np),
+      onClick: () => insertAt(i + 1, midpoint(points[i], p)),
+    }));
+    return [...mids, ...out];
+  }, [points, color, selected]);
+
 
   const save = async () => {
     if (points.length < 2) {
@@ -117,7 +175,7 @@ export function RouteBuilder({
             center={start}
             zoom={points.length > 1 ? 8 : 9}
             routes={points.length > 1 ? [{ id: "draft", points, color, weight: 4 }] : []}
-            stops={points.map((p) => ({ pos: p, color }))}
+            stops={stops}
           />
         ) : (
           <MapContainer center={start} zoom={9} style={{ height: "100%", width: "100%" }}>
@@ -146,12 +204,34 @@ export function RouteBuilder({
             {points.length > 1 && (
               <Polyline positions={points} pathOptions={{ color, weight: 4, opacity: 0.95 }} />
             )}
+            {points.slice(1).map((p, i) => (
+              <Marker
+                key={`mid-${i}`}
+                position={midpoint(points[i], p)}
+                draggable
+                icon={dotIcon(color, 12, true)}
+                eventHandlers={{
+                  click: () => insertAt(i + 1, midpoint(points[i], p)),
+                  dragend: (e: any) => {
+                    const ll = e.target.getLatLng();
+                    insertAt(i + 1, [ll.lat, ll.lng]);
+                  },
+                }}
+              />
+            ))}
             {points.map((p, i) => (
-              <CircleMarker
-                key={i}
-                center={p}
-                radius={6}
-                pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
+              <Marker
+                key={`wp-${i}`}
+                position={p}
+                draggable
+                icon={dotIcon(color, selected === i ? 18 : 14, false)}
+                eventHandlers={{
+                  click: () => setSelected((s) => (s === i ? null : i)),
+                  drag: (e: any) => {
+                    const ll = e.target.getLatLng();
+                    movePoint(i, [ll.lat, ll.lng]);
+                  },
+                }}
               />
             ))}
           </MapContainer>
@@ -159,17 +239,41 @@ export function RouteBuilder({
         <div className="absolute right-3 top-3 z-[400]">
           <MapStyleToggle value={style} onChange={setStyle} />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <span className="rounded-full bg-background/80 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
-            Tap the map to drop waypoints along your path
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-4">
+          <span className="rounded-full bg-background/80 px-3 py-1.5 text-center text-[11px] font-semibold text-muted-foreground backdrop-blur">
+            Tap the map to add · drag dots to move · drag/tap a faded dot to insert
           </span>
         </div>
+
       </div>
 
       <div
         className="max-h-[55vh] shrink-0 space-y-3 overflow-y-auto border-t border-white/[0.06] bg-card px-4 pt-4"
         style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
       >
+        {selected != null && points[selected] && (
+          <div className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-3 py-2">
+            <span className="flex-1 text-xs font-semibold">
+              Waypoint {selected + 1}
+              <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+                {points[selected][0].toFixed(4)}, {points[selected][1].toFixed(4)}
+              </span>
+            </span>
+            <button
+              onClick={() => insertAt(selected + 1, points[selected])}
+              className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[11px] font-bold"
+            >
+              Duplicate
+            </button>
+            <button
+              onClick={() => removeAt(selected)}
+              className="flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-[11px] font-bold text-destructive-foreground"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center gap-3">
           <div className="flex-1">
             <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
