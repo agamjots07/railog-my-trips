@@ -239,11 +239,12 @@ export function RouteBuilder({
         <div className="absolute right-3 top-3 z-[400]">
           <MapStyleToggle value={style} onChange={setStyle} />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center">
-          <span className="rounded-full bg-background/80 px-3 py-1.5 text-[11px] font-semibold text-muted-foreground backdrop-blur">
-            Tap the map to drop waypoints along your path
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-4">
+          <span className="rounded-full bg-background/80 px-3 py-1.5 text-center text-[11px] font-semibold text-muted-foreground backdrop-blur">
+            Tap the map to add · drag dots to move · drag/tap a faded dot to insert
           </span>
         </div>
+
       </div>
 
       <div
