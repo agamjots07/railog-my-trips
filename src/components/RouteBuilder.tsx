@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { MapContainer, TileLayer, Polyline, CircleMarker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, useMapEvents } from "react-leaflet";
+import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
 import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
@@ -16,6 +17,21 @@ function totalKm(path: LatLng[]) {
   return km;
 }
 
+function midpoint(a: LatLng, b: LatLng): LatLng {
+  return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+}
+
+function dotIcon(color: string, size: number, hollow: boolean) {
+  return L.divIcon({
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:9999px;background:${
+      hollow ? "rgba(255,255,255,0.55)" : color
+    };border:2px solid ${hollow ? color : "#fff"};box-sizing:border-box"></div>`,
+  });
+}
+
 function LeafletClicks({ onAdd }: { onAdd: (p: LatLng) => void }) {
   useMapEvents({
     click(e) {
@@ -24,6 +40,7 @@ function LeafletClicks({ onAdd }: { onAdd: (p: LatLng) => void }) {
   });
   return null;
 }
+
 
 export function RouteBuilder({
   tripId,
