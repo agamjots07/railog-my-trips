@@ -211,18 +211,27 @@ export function GoogleMapCanvas({
       const marker = new google.maps.Marker({
         position: { lat: s.pos[0], lng: s.pos[1] },
         map: m,
+        draggable: !!s.draggable,
+        cursor: s.draggable ? "grab" : undefined,
+        title: s.title,
+        zIndex: s.zIndex,
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          scale: 6,
-          fillColor: s.color,
-          fillOpacity: 1,
-          strokeColor: "#ffffff",
+          scale: s.scale ?? 6,
+          fillColor: s.hollow ? "#ffffff" : s.color,
+          fillOpacity: s.hollow ? 0.55 : 1,
+          strokeColor: s.hollow ? s.color : "#ffffff",
           strokeWeight: 2,
         },
       });
+      if (s.onDrag) marker.addListener("drag", (e: any) => s.onDrag!([e.latLng.lat(), e.latLng.lng()]));
+      if (s.onDragEnd)
+        marker.addListener("dragend", (e: any) => s.onDragEnd!([e.latLng.lat(), e.latLng.lng()]));
+      if (s.onClick) marker.addListener("click", () => s.onClick!());
       overlaysRef.current.push(marker);
       bounds.extend({ lat: s.pos[0], lng: s.pos[1] });
     }
+
 
     if (fit && !bounds.isEmpty()) {
       if (routes.every((r) => r.points.length < 2) && stops.length <= 1) {
