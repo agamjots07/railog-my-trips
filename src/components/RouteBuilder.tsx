@@ -60,6 +60,7 @@ export function RouteBuilder({
   onSaved: (v: { path: LatLng[]; distanceKm: number; maxSpeed: number | null }) => void;
 }) {
   const [points, setPoints] = useState<LatLng[]>(initialPath);
+  const [selected, setSelected] = useState<number | null>(null);
   const [topSpeed, setTopSpeed] = useState<string>(
     initialTopSpeed != null ? String(Math.round(initialTopSpeed)) : "",
   );
@@ -71,7 +72,47 @@ export function RouteBuilder({
   const km = useMemo(() => totalKm(points), [points]);
   const start: LatLng = center ?? points[0] ?? [36.1699, -115.1398];
 
-  const add = (p: LatLng) => setPoints((prev) => [...prev, p]);
+  const add = (p: LatLng) => {
+    setPoints((prev) => [...prev, p]);
+    setSelected(null);
+  };
+  const movePoint = (i: number, p: LatLng) =>
+    setPoints((prev) => prev.map((q, j) => (j === i ? p : q)));
+  const insertAt = (i: number, p: LatLng) => {
+    setPoints((prev) => [...prev.slice(0, i), p, ...prev.slice(i)]);
+    setSelected(i);
+  };
+  const removeAt = (i: number) => {
+    setPoints((prev) => prev.filter((_, j) => j !== i));
+    setSelected(null);
+  };
+
+  // Draggable waypoint handles + hollow "insert" handles at each segment midpoint.
+  const stops = useMemo(() => {
+    const out = points.map((p, i) => ({
+      pos: p,
+      color,
+      scale: selected === i ? 9 : 7,
+      draggable: true,
+      zIndex: 20,
+      title: `Waypoint ${i + 1}`,
+      onDragEnd: (np: LatLng) => movePoint(i, np),
+      onClick: () => setSelected((s) => (s === i ? null : i)),
+    }));
+    const mids = points.slice(1).map((p, i) => ({
+      pos: midpoint(points[i], p),
+      color,
+      scale: 5,
+      hollow: true,
+      draggable: true,
+      zIndex: 10,
+      title: "Drag or tap to insert a waypoint here",
+      onDragEnd: (np: LatLng) => insertAt(i + 1, np),
+      onClick: () => insertAt(i + 1, midpoint(points[i], p)),
+    }));
+    return [...mids, ...out];
+  }, [points, color, selected]);
+
 
   const save = async () => {
     if (points.length < 2) {
