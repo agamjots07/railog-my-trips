@@ -18,7 +18,18 @@ export type MapRoute = {
 export type MapStop = {
   pos: LatLng;
   color: string;
+  /** Marker radius in px (default 6). */
+  scale?: number;
+  /** Renders as an outlined "ghost" marker (used for insert handles). */
+  hollow?: boolean;
+  draggable?: boolean;
+  onDrag?: (p: LatLng) => void;
+  onDragEnd?: (p: LatLng) => void;
+  onClick?: () => void;
+  title?: string;
+  zIndex?: number;
 };
+
 
 type Props = {
   routes: MapRoute[];
