@@ -75,6 +75,11 @@ function NewTrip() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [depLoading, setDepLoading] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
+  // Route preview: intermediate stops + the resolved path shown before saving.
+  const [vias, setVias] = useState<StationHit[]>([]);
+  const [viaText, setViaText] = useState("");
+  const [preview, setPreview] = useState<{ path: [number, number][]; km: number } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
 
   const liveOnly = isLiveOnly(mode);
   const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
