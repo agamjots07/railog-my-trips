@@ -77,6 +77,7 @@ export async function waitForTilesLoaded(node: HTMLElement, timeoutMs = 20000): 
 export function GoogleMapCanvas({
   routes,
   stops = [],
+  marker = null,
   center,
   zoom = 4,
   fit = true,
