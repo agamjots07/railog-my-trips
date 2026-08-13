@@ -104,6 +104,13 @@ function LeafletTripMap({
           pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
         />
       ))}
+      {marker && (
+        <CircleMarker
+          center={marker}
+          radius={9}
+          pathOptions={{ color: "#ffffff", fillColor: color, fillOpacity: 1, weight: 3 }}
+        />
+      )}
       <FitBounds points={fitPoints} />
     </MapContainer>
   );
