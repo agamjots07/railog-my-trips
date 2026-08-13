@@ -12,6 +12,7 @@ import { RouteBuilder } from "@/components/RouteBuilder";
 import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
 import { ShareTripCard } from "@/components/ShareTripCard";
 import { GoTrainCard } from "@/components/GoTrainCard";
+import { usePlayback, PlaybackControls } from "@/components/TripPlayback";
 import { isGoTrip } from "@/lib/goTrains";
 
 
