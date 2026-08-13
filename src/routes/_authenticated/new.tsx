@@ -220,12 +220,17 @@ function NewTrip() {
 
       const o = isStationMode && !busLive ? originStation : null;
       const d = isStationMode && !busLive ? destinationStation : null;
-      const distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
+      // A generated preview (with any intermediate stops) wins over a plain A→B shape.
+      const usePreview = !isLive && !!preview && preview.path.length >= 2;
+      let distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
 
       let geometry: [number, number][] | null = null;
-      if (!isLive && o && d) {
+      if (usePreview) {
+        geometry = preview!.path;
+        distance = preview!.km;
+      } else if (!isLive && o && d) {
         try {
-          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train");
+          geometry = await fetchRouteGeometry(o, d, legMode);
         } catch {
           geometry = null;
         }
