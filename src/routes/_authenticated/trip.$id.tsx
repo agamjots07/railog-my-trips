@@ -347,18 +347,36 @@ function TripDetail() {
       )}
 
 
-      <div
-        className="my-6 overflow-hidden rounded-3xl border border-white/[0.06]"
-        style={{ boxShadow: "var(--shadow-card)" }}
-      >
-        <TripMap
-          origin={isLive ? null : origin}
-          destination={isLive ? null : destination}
-          path={path}
-          mode={mode}
-          height={300}
-        />
+      <div className="my-6">
+        <div
+          className="overflow-hidden rounded-3xl border border-white/[0.06]"
+          style={{ boxShadow: "var(--shadow-card)" }}
+        >
+          <TripMap
+            origin={isLive ? null : origin}
+            destination={isLive ? null : destination}
+            path={path}
+            mode={mode}
+            height={300}
+            marker={!isLive ? playback.position : null}
+          />
+        </div>
+
+        {!isLive && playback.enabled && (
+          <PlaybackControls
+            color={color}
+            playing={playback.playing}
+            speed={playback.speed}
+            progress={playback.progress}
+            distanceKm={playback.distanceKm}
+            onToggle={playback.toggle}
+            onReset={playback.reset}
+            onSpeed={playback.setSpeed}
+            onSeek={playback.seek}
+          />
+        )}
       </div>
+
 
       <div
         className="grid grid-cols-3 overflow-hidden rounded-3xl border border-white/[0.06] bg-card"
