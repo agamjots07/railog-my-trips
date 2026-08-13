@@ -172,6 +172,7 @@ export function TripMap({
           dashed={dashed}
           isStraight={isStraight}
           style={style}
+          marker={marker ?? null}
         />
       )}
       <div className="absolute right-2 top-2 z-[400]">
