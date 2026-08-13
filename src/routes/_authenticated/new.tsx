@@ -155,6 +155,50 @@ function NewTrip() {
     if (destinationStation && v !== destinationStation.name) setDestinationStation(null);
   };
 
+  const legMode = mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train";
+
+  // Any change to the stop list invalidates a previously generated preview.
+  useEffect(() => {
+    setPreview(null);
+  }, [originStation, destinationStation, vias, mode]);
+
+  const buildPreview = async () => {
+    if (!originStation || !destinationStation) {
+      toast.error("Pick an origin and destination first");
+      return;
+    }
+    setPreviewing(true);
+    try {
+      const nodes = [originStation, ...vias, destinationStation];
+      const path: [number, number][] = [];
+      for (let i = 1; i < nodes.length; i++) {
+        const a = nodes[i - 1];
+        const b = nodes[i];
+        let leg: [number, number][] | null = null;
+        try {
+          leg = await fetchRouteGeometry(a, b, legMode);
+        } catch {
+          leg = null;
+        }
+        if (!leg || leg.length < 2) leg = [[a.lat, a.lng], [b.lat, b.lng]];
+        for (const p of leg) {
+          const last = path[path.length - 1];
+          if (!last || last[0] !== p[0] || last[1] !== p[1]) path.push(p);
+        }
+      }
+      let km = 0;
+      for (let i = 1; i < path.length; i++) km += haversineKm(path[i - 1], path[i]);
+      setPreview({ path, km });
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const addVia = (s: StationHit) => {
+    setVias((prev) => [...prev, s]);
+    setViaText("");
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
