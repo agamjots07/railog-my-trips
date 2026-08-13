@@ -34,6 +34,8 @@ export type MapStop = {
 type Props = {
   routes: MapRoute[];
   stops?: MapStop[];
+  /** A single moving marker (playback dot). Updating it never refits bounds. */
+  marker?: { pos: LatLng; color: string; scale?: number } | null;
   center?: LatLng;
   zoom?: number;
   fit?: boolean;
