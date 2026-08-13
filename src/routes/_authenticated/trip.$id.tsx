@@ -99,6 +99,8 @@ function TripDetail() {
     if (gpsError) toast.error(`GPS: ${gpsError}`);
   }, [gpsError]);
 
+  const playback = usePlayback(initialPath);
+
 
   if (trip === undefined) {
     return <div className="px-5 pt-10 text-muted-foreground">Loading…</div>;
