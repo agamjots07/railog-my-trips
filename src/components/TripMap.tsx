@@ -30,6 +30,7 @@ function LeafletTripMap({
   dashed,
   isStraight,
   style,
+  marker,
 }: {
   fitPoints: LatLng[];
   routeLine: LatLng[] | null;
@@ -38,6 +39,7 @@ function LeafletTripMap({
   dashed: boolean;
   isStraight: boolean;
   style: MapStyle;
+  marker?: LatLng | null;
 }) {
   const center: LatLng = fitPoints[0] ?? [40, 0];
   return (
