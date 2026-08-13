@@ -446,6 +446,74 @@ function NewTrip() {
           </SectionCard>
         )}
 
+        {/* Route preview with intermediate stops */}
+        {isStationMode && !busLive && (
+          <SectionCard>
+            <Field label="Intermediate stops (optional)">
+              <StationAutocomplete
+                value={viaText}
+                onChange={setViaText}
+                onSelect={addVia}
+                mode={legMode}
+                placeholder="Add a stop along the way…"
+              />
+            </Field>
+            {vias.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {vias.map((v, i) => (
+                  <span
+                    key={`${v.id}-${i}`}
+                    className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-background px-3 py-1.5 text-[11px] font-semibold"
+                  >
+                    {i + 1}. {v.name}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${v.name}`}
+                      onClick={() => setVias((prev) => prev.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <Divider />
+            <button
+              type="button"
+              onClick={buildPreview}
+              disabled={previewing || !originStation || !destinationStation}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-background py-3 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50"
+            >
+              {previewing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MapIcon className="h-4 w-4" />
+              )}
+              {preview ? "Refresh preview" : "Preview route"}
+            </button>
+
+            {preview && (
+              <div className="mt-4">
+                <TripMap
+                  origin={originStation ? [originStation.lat, originStation.lng] : null}
+                  destination={
+                    destinationStation ? [destinationStation.lat, destinationStation.lng] : null
+                  }
+                  extraStops={vias.map((v) => [v.lat, v.lng] as [number, number])}
+                  path={preview.path}
+                  mode={mode}
+                  height={220}
+                />
+                <p className="mt-2 text-center text-[12px] font-semibold text-muted-foreground">
+                  {vias.length + 2} stops · {preview.km.toFixed(preview.km < 10 ? 2 : 1)} km total
+                </p>
+              </div>
+            )}
+          </SectionCard>
+        )}
+
         {/* Live-only label + vehicle */}
         {freeform && (
           <SectionCard>
