@@ -251,6 +251,44 @@ export function GoogleMapCanvas({
     }
   }, [mounted, routes, stops, fit, google]);
 
+  // Standalone moving marker — reuses one instance so playback never refits.
+  useEffect(() => {
+    if (!mounted || !google?.maps || !mapRef.current) return;
+    if (!marker) {
+      markerRef.current?.setMap(null);
+      markerRef.current = null;
+      return;
+    }
+    const icon = {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: marker.scale ?? 8,
+      fillColor: marker.color,
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 3,
+    };
+    const pos = { lat: marker.pos[0], lng: marker.pos[1] };
+    if (!markerRef.current) {
+      markerRef.current = new google.maps.Marker({
+        position: pos,
+        map: mapRef.current,
+        icon,
+        zIndex: 999,
+        clickable: false,
+      });
+    } else {
+      markerRef.current.setPosition(pos);
+      markerRef.current.setIcon(icon);
+    }
+  }, [mounted, marker, google]);
+
+  useEffect(() => {
+    return () => {
+      markerRef.current?.setMap(null);
+      markerRef.current = null;
+    };
+  }, []);
+
   return <div ref={hostRef} className="h-full w-full" style={{ background: "#0a0a0f" }} />;
 }
 
