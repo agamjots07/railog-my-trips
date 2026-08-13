@@ -91,6 +91,7 @@ export function GoogleMapCanvas({
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
+  const markerRef = useRef<any>(null);
   const infoRef = useRef<any>(null);
   const [mounted, setMounted] = useState(false);
   const clickRef = useRef(onMapClick);
