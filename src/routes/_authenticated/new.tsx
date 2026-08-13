@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, useEffect, type FormEvent } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { ChevronLeft, Radio, Car, Sparkles } from "lucide-react";
+import { ChevronLeft, Radio, Car, Sparkles, X, Loader2, Map as MapIcon } from "lucide-react";
+import { TripMap } from "@/components/TripMap";
 import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
@@ -75,6 +76,11 @@ function NewTrip() {
   const [departures, setDepartures] = useState<Departure[]>([]);
   const [depLoading, setDepLoading] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string>("");
+  // Route preview: intermediate stops + the resolved path shown before saving.
+  const [vias, setVias] = useState<StationHit[]>([]);
+  const [viaText, setViaText] = useState("");
+  const [preview, setPreview] = useState<{ path: [number, number][]; km: number } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
 
   const liveOnly = isLiveOnly(mode);
   const isStationMode = mode === "train" || mode === "ferry" || mode === "bus";
@@ -150,6 +156,50 @@ function NewTrip() {
     if (destinationStation && v !== destinationStation.name) setDestinationStation(null);
   };
 
+  const legMode = mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train";
+
+  // Any change to the stop list invalidates a previously generated preview.
+  useEffect(() => {
+    setPreview(null);
+  }, [originStation, destinationStation, vias, mode]);
+
+  const buildPreview = async () => {
+    if (!originStation || !destinationStation) {
+      toast.error("Pick an origin and destination first");
+      return;
+    }
+    setPreviewing(true);
+    try {
+      const nodes = [originStation, ...vias, destinationStation];
+      const path: [number, number][] = [];
+      for (let i = 1; i < nodes.length; i++) {
+        const a = nodes[i - 1];
+        const b = nodes[i];
+        let leg: [number, number][] | null = null;
+        try {
+          leg = await fetchRouteGeometry(a, b, legMode);
+        } catch {
+          leg = null;
+        }
+        if (!leg || leg.length < 2) leg = [[a.lat, a.lng], [b.lat, b.lng]];
+        for (const p of leg) {
+          const last = path[path.length - 1];
+          if (!last || last[0] !== p[0] || last[1] !== p[1]) path.push(p);
+        }
+      }
+      let km = 0;
+      for (let i = 1; i < path.length; i++) km += haversineKm(path[i - 1], path[i]);
+      setPreview({ path, km });
+    } finally {
+      setPreviewing(false);
+    }
+  };
+
+  const addVia = (s: StationHit) => {
+    setVias((prev) => [...prev, s]);
+    setViaText("");
+  };
+
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -171,12 +221,17 @@ function NewTrip() {
 
       const o = isStationMode && !busLive ? originStation : null;
       const d = isStationMode && !busLive ? destinationStation : null;
-      const distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
+      // A generated preview (with any intermediate stops) wins over a plain A→B shape.
+      const usePreview = !isLive && !!preview && preview.path.length >= 2;
+      let distance = !isLive && o && d ? haversineKm([o.lat, o.lng], [d.lat, d.lng]) : null;
 
       let geometry: [number, number][] | null = null;
-      if (!isLive && o && d) {
+      if (usePreview) {
+        geometry = preview!.path;
+        distance = preview!.km;
+      } else if (!isLive && o && d) {
         try {
-          geometry = await fetchRouteGeometry(o, d, mode === "ferry" ? "ferry" : mode === "bus" ? "bus" : "train");
+          geometry = await fetchRouteGeometry(o, d, legMode);
         } catch {
           geometry = null;
         }
@@ -389,6 +444,74 @@ function NewTrip() {
                 className={inputCls}
               />
             </Field>
+          </SectionCard>
+        )}
+
+        {/* Route preview with intermediate stops */}
+        {isStationMode && !busLive && (
+          <SectionCard>
+            <Field label="Intermediate stops (optional)">
+              <StationAutocomplete
+                value={viaText}
+                onChange={setViaText}
+                onSelect={addVia}
+                mode={legMode}
+                placeholder="Add a stop along the way…"
+              />
+            </Field>
+            {vias.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {vias.map((v, i) => (
+                  <span
+                    key={`${v.id}-${i}`}
+                    className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-background px-3 py-1.5 text-[11px] font-semibold"
+                  >
+                    {i + 1}. {v.name}
+                    <button
+                      type="button"
+                      aria-label={`Remove ${v.name}`}
+                      onClick={() => setVias((prev) => prev.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <Divider />
+            <button
+              type="button"
+              onClick={buildPreview}
+              disabled={previewing || !originStation || !destinationStation}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl border border-white/[0.08] bg-background py-3 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50"
+            >
+              {previewing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MapIcon className="h-4 w-4" />
+              )}
+              {preview ? "Refresh preview" : "Preview route"}
+            </button>
+
+            {preview && (
+              <div className="mt-4">
+                <TripMap
+                  origin={originStation ? [originStation.lat, originStation.lng] : null}
+                  destination={
+                    destinationStation ? [destinationStation.lat, destinationStation.lng] : null
+                  }
+                  extraStops={vias.map((v) => [v.lat, v.lng] as [number, number])}
+                  path={preview.path}
+                  mode={mode}
+                  height={220}
+                />
+                <p className="mt-2 text-center text-[12px] font-semibold text-muted-foreground">
+                  {vias.length + 2} stops · {preview.km.toFixed(preview.km < 10 ? 2 : 1)} km total
+                </p>
+              </div>
+            )}
           </SectionCard>
         )}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-leaflet";
 import L from "leaflet";
 import { MODE_COLOR, type TripMode } from "@/lib/modes";
@@ -30,6 +30,7 @@ function LeafletTripMap({
   dashed,
   isStraight,
   style,
+  marker,
 }: {
   fitPoints: LatLng[];
   routeLine: LatLng[] | null;
@@ -38,6 +39,7 @@ function LeafletTripMap({
   dashed: boolean;
   isStraight: boolean;
   style: MapStyle;
+  marker?: LatLng | null;
 }) {
   const center: LatLng = fitPoints[0] ?? [40, 0];
   return (
@@ -102,6 +104,13 @@ function LeafletTripMap({
           pathOptions={{ color, fillColor: color, fillOpacity: 1, weight: 2 }}
         />
       ))}
+      {marker && (
+        <CircleMarker
+          center={marker}
+          radius={9}
+          pathOptions={{ color: "#ffffff", fillColor: color, fillOpacity: 1, weight: 3 }}
+        />
+      )}
       <FitBounds points={fitPoints} />
     </MapContainer>
   );
@@ -113,21 +122,45 @@ export function TripMap({
   path,
   mode = "train",
   height = 280,
+  extraStops,
+  marker,
 }: {
   origin?: LatLng | null;
   destination?: LatLng | null;
   path?: LatLng[] | null;
   mode?: TripMode;
   height?: number;
+  /** Intermediate stop markers (route preview). */
+  extraStops?: LatLng[];
+  /** Moving playback dot. */
+  marker?: LatLng | null;
 }) {
   const [style, setStyle] = useState<MapStyle>("satellite");
   const { provider, forceLeaflet } = useMapProvider();
-  const stops = [origin, destination].filter(Boolean) as LatLng[];
+  const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
+  const stops = useMemo(
+    () => [origin, ...(extraStops ?? []), destination].filter(Boolean) as LatLng[],
+    [origin, destination, extraStops],
+  );
   const routeLine = path && path.length >= 2 ? path : null;
   const fitPoints: LatLng[] = routeLine ?? stops;
-  const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
-  const isStraight = !routeLine && stops.length === 2;
+  const isStraight = !routeLine && stops.length >= 2;
   const dashed = mode === "ferry" || mode === "jetski";
+
+  const gRoutes = useMemo(
+    () =>
+      routeLine
+        ? [{ id: "r", points: routeLine, color, dashed, weight: 4 }]
+        : isStraight
+          ? [{ id: "r", points: stops, color, dashed: true, weight: 3, opacity: 0.6 }]
+          : [],
+    [routeLine, stops, color, dashed, isStraight],
+  );
+  const gStops = useMemo(() => stops.map((p) => ({ pos: p, color })), [stops, color]);
+  const gMarker = useMemo(
+    () => (marker ? { pos: marker, color, scale: 8 } : null),
+    [marker, color],
+  );
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border" style={{ height }}>
@@ -135,14 +168,9 @@ export function TripMap({
         <GoogleMapCanvas
           style={style}
           onFail={forceLeaflet}
-          routes={
-            routeLine
-              ? [{ id: "r", points: routeLine, color, dashed, weight: 4 }]
-              : isStraight
-                ? [{ id: "r", points: stops, color, dashed: true, weight: 3, opacity: 0.6 }]
-                : []
-          }
-          stops={stops.map((p) => ({ pos: p, color }))}
+          routes={gRoutes}
+          stops={gStops}
+          marker={gMarker}
         />
       ) : (
         <LeafletTripMap
@@ -153,6 +181,7 @@ export function TripMap({
           dashed={dashed}
           isStraight={isStraight}
           style={style}
+          marker={marker ?? null}
         />
       )}
       <div className="absolute right-2 top-2 z-[400]">
