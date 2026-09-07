@@ -243,6 +243,14 @@ function JourneyMapPage() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               Journey Map
             </p>
+            <div className="flex-1" />
+            <Link
+              to="/planner"
+              className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-card/80 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-primary backdrop-blur-xl transition active:scale-95"
+            >
+              <Navigation className="h-3.5 w-3.5" />
+              Plan route
+            </Link>
           </div>
           <h1 className="mt-1 text-[26px] font-bold leading-tight tracking-tight text-foreground">
             Every trip you've taken
