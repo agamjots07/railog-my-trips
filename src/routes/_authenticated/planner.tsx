@@ -46,6 +46,27 @@ function fmtTotal(mins: number): string {
   return m ? `${h} hr ${m} min` : `${h} hr`;
 }
 
+/** Decode a Google encoded polyline string into [lat, lng] pairs. */
+function decodePolyline(encoded: string): LatLng[] {
+  const points: LatLng[] = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    for (const which of [0, 1]) {
+      let shift = 0, result = 0, b: number;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      const d = result & 1 ? ~(result >> 1) : result >> 1;
+      if (which === 0) lat += d;
+      else lng += d;
+    }
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+  return points;
+}
+
 /** Text input with Google Places (New) autocomplete suggestions. */
 function PlaceInput({
   value,
