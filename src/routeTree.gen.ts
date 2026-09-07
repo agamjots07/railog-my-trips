@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedStatsRouteImport } from './routes/_authenticated/stats'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedGarageRouteImport } from './routes/_authenticated/garage'
@@ -43,6 +44,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPlannerRoute = AuthenticatedPlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedNewRoute = AuthenticatedNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -70,6 +76,7 @@ export interface FileRoutesByFullPath {
   '/garage': typeof AuthenticatedGarageRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
+  '/planner': typeof AuthenticatedPlannerRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/trip/$id': typeof AuthenticatedTripIdRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/garage': typeof AuthenticatedGarageRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
+  '/planner': typeof AuthenticatedPlannerRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/stats': typeof AuthenticatedStatsRoute
   '/': typeof AuthenticatedIndexRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   '/_authenticated/garage': typeof AuthenticatedGarageRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
+  '/_authenticated/planner': typeof AuthenticatedPlannerRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/stats': typeof AuthenticatedStatsRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
     | '/garage'
     | '/map'
     | '/new'
+    | '/planner'
     | '/settings'
     | '/stats'
     | '/trip/$id'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/garage'
     | '/map'
     | '/new'
+    | '/planner'
     | '/settings'
     | '/stats'
     | '/'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/_authenticated/garage'
     | '/_authenticated/map'
     | '/_authenticated/new'
+    | '/_authenticated/planner'
     | '/_authenticated/settings'
     | '/_authenticated/stats'
     | '/_authenticated/'
@@ -172,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/planner': {
+      id: '/_authenticated/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof AuthenticatedPlannerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/new': {
       id: '/_authenticated/new'
       path: '/new'
@@ -207,6 +226,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedGarageRoute: typeof AuthenticatedGarageRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
+  AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedStatsRoute: typeof AuthenticatedStatsRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -217,6 +237,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGarageRoute: AuthenticatedGarageRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedNewRoute: AuthenticatedNewRoute,
+  AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedStatsRoute: AuthenticatedStatsRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
