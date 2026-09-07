@@ -46,6 +46,27 @@ function fmtTotal(mins: number): string {
   return m ? `${h} hr ${m} min` : `${h} hr`;
 }
 
+/** Decode a Google encoded polyline string into [lat, lng] pairs. */
+function decodePolyline(encoded: string): LatLng[] {
+  const points: LatLng[] = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < encoded.length) {
+    for (const which of [0, 1]) {
+      let shift = 0, result = 0, b: number;
+      do {
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+      const d = result & 1 ? ~(result >> 1) : result >> 1;
+      if (which === 0) lat += d;
+      else lng += d;
+    }
+    points.push([lat / 1e5, lng / 1e5]);
+  }
+  return points;
+}
+
 /** Text input with Google Places (New) autocomplete suggestions. */
 function PlaceInput({
   value,
@@ -178,35 +199,88 @@ function PlannerPage() {
     setLoading(true);
     setError(null);
     try {
-      const svc = new google.maps.DirectionsService();
-      const result = await svc.route({
-        origin: origin.trim(),
-        destination: destination.trim(),
-        waypoints: waypoints
-          .filter((w) => w.text.trim())
-          .map((w) => ({ location: w.text.trim(), stopover: true })),
-        travelMode: google.maps.TravelMode.DRIVING,
-      });
-      const route = result.routes?.[0];
-      if (!route) throw new Error("no route");
-      const pts: LatLng[] = (route.overview_path ?? []).map((p: any) => [p.lat(), p.lng()]);
+      const addresses = [origin.trim(), ...waypoints.map((w) => w.text.trim()).filter(Boolean), destination.trim()];
+      // Geocode each address with Places (New)
+      const { Place } = (await google.maps.importLibrary("places")) as any;
+      const coords: { lat: number; lng: number; name: string }[] = [];
+      for (const addr of addresses) {
+        const q = await Place.searchByText({
+          textQuery: addr,
+          fields: ["location", "displayName"],
+          maxResultCount: 1,
+        });
+        const pl = q?.places?.[0];
+        if (!pl?.location) throw Object.assign(new Error("geocode"), { addr });
+        coords.push({ lat: pl.location.lat(), lng: pl.location.lng(), name: pl.displayName ?? addr });
+      }
+
+      // Try Google Routes API first (requires Routes API enabled on the key);
+      // fall back to the free OSRM routing engine.
+      let pts: LatLng[] | null = null;
+      let legInfos: LegInfo[] | null = null;
+      const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string;
+      try {
+        const res = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": key,
+            "X-Goog-FieldMask":
+              "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration,routes.legs.polyline.encodedPolyline",
+          },
+          body: JSON.stringify({
+            origin: { location: { latLng: { latitude: coords[0].lat, longitude: coords[0].lng } } },
+            destination: {
+              location: { latLng: { latitude: coords[coords.length - 1].lat, longitude: coords[coords.length - 1].lng } },
+            },
+            intermediates: coords.slice(1, -1).map((c) => ({
+              location: { latLng: { latitude: c.lat, longitude: c.lng } },
+            })),
+            travelMode: "DRIVE",
+          }),
+        });
+        if (!res.ok) throw new Error(`routes ${res.status}`);
+        const data = await res.json();
+        const route = data.routes?.[0];
+        if (!route) throw new Error("no route");
+        pts = decodePolyline(route.polyline.encodedPolyline);
+        legInfos = (route.legs ?? []).map((l: any, i: number) => ({
+          start: coords[i]?.name ?? "",
+          end: coords[i + 1]?.name ?? "",
+          distanceText: `${(l.distanceMeters / 1000).toFixed(1)} km`,
+          durationText: fmtTotal(Math.round(parseFloat(String(l.duration).replace("s", "")) / 60)),
+          distanceM: l.distanceMeters,
+          durationS: parseFloat(String(l.duration).replace("s", "")),
+        }));
+      } catch {
+        // OSRM fallback — free public routing, no key needed.
+        const coordStr = coords.map((c) => `${c.lng},${c.lat}`).join(";");
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson&steps=false`,
+        );
+        if (!res.ok) throw new Error("osrm failed");
+        const data = await res.json();
+        const route = data.routes?.[0];
+        if (!route) throw new Error("no route");
+        pts = route.geometry.coordinates.map(([lng, lat]: [number, number]) => [lat, lng] as LatLng);
+        legInfos = (route.legs ?? []).map((l: any, i: number) => ({
+          start: coords[i]?.name ?? "",
+          end: coords[i + 1]?.name ?? "",
+          distanceText: `${(l.distance / 1000).toFixed(1)} km`,
+          durationText: fmtTotal(Math.round(l.duration / 60)),
+          distanceM: l.distance,
+          durationS: l.duration,
+        }));
+      }
+
       setPath(pts.length >= 2 ? pts : null);
-      setLegs(
-        (route.legs ?? []).map((l: any) => ({
-          start: l.start_address ?? "",
-          end: l.end_address ?? "",
-          distanceText: l.distance?.text ?? "",
-          durationText: l.duration?.text ?? "",
-          distanceM: l.distance?.value ?? 0,
-          durationS: l.duration?.value ?? 0,
-        })),
-      );
+      setLegs(legInfos);
     } catch (e: any) {
       setPath(null);
       setLegs(null);
       setError(
-        e?.code === "ZERO_RESULTS"
-          ? "No driving route found between those places."
+        e?.addr
+          ? `Couldn't find "${e.addr}". Try a more specific name or address.`
           : "Couldn't find that route. Check the place names and try again.",
       );
     } finally {
