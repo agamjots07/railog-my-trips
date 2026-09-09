@@ -13,6 +13,8 @@ import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
 import { reverseGeocode, reverseGeocodeDetail } from "@/lib/reverseGeocode";
 import { EmptyState } from "@/components/EmptyState";
+import { useRoadCoverage } from "@/lib/useRoadCoverage";
+import type { CoverageLevel } from "@/lib/roadCoverage";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({ meta: [{ title: "Stats — Pencer" }] }),
@@ -27,6 +29,7 @@ function StatsPage() {
   const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
   const [roadDetails, setRoadDetails] = useState<Record<string, { roads: string[]; cities: string[] }>>({});
   const [busiestExpanded, setBusiestExpanded] = useState(false);
+  const coverage = useRoadCoverage(trips);
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
@@ -528,6 +531,41 @@ function StatsPage() {
         );
       })()}
 
+      {/* Roads coverage */}
+      {(coverage.driveCount > 0 || coverage.loading) && (
+        <>
+          <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <Globe className="h-3.5 w-3.5" /> Roads coverage
+          </h2>
+          <div
+            className="rounded-3xl border border-white/[0.06] bg-card p-5"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          >
+            <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
+              How much of the road network you've actually driven, from GPS-recorded
+              Drive trips only. Repeated streets count once.
+            </p>
+            {coverage.loading && coverage.levels.length === 0 ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 animate-pulse rounded-2xl bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : coverage.levels.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No GPS-recorded drives yet — start a live Drive trip to begin covering roads.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {coverage.levels.map((l) => (
+                  <CoverageBar key={`${l.kind}-${l.name}`} level={l} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* Achievements */}
       <h2 className="mt-8 mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         <span>Achievements</span>
@@ -667,6 +705,46 @@ function ModeBar({
       <div className="h-1.5 overflow-hidden rounded-full bg-background/60">
         <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: gradient }} />
       </div>
+    </div>
+  );
+}
+
+const COVERAGE_LABEL: Record<CoverageLevel["kind"], string> = {
+  country: "Country",
+  region: "Province / State",
+  city: "City",
+};
+
+function CoverageBar({ level }: { level: CoverageLevel }) {
+  const pct = level.pct ?? 0;
+  const width = level.pct == null ? 0 : Math.max(Math.min(pct, 100), pct > 0 ? 1.5 : 0);
+  const fmtKm = (km: number) =>
+    km >= 1000 ? `${Math.round(km).toLocaleString()}` : km.toFixed(km < 10 ? 2 : 1);
+  return (
+    <div>
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            {COVERAGE_LABEL[level.kind]}
+          </p>
+          <p className="mt-0.5 truncate text-sm font-bold">{level.name}</p>
+        </div>
+        <p className="shrink-0 font-mono text-xl font-bold tabular-nums text-primary">
+          {level.pct == null ? "—" : `${pct < 0.01 ? pct.toFixed(3) : pct.toFixed(2)}%`}
+        </p>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-background/60">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${width}%`, background: "var(--gradient-primary)" }}
+        />
+      </div>
+      <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+        {fmtKm(level.coveredKm)} km covered
+        {level.totalKm != null
+          ? ` of ${Math.round(level.totalKm).toLocaleString()} km`
+          : " · total road length unavailable"}
+      </p>
     </div>
   );
 }

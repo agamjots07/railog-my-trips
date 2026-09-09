@@ -273,7 +273,7 @@ function PlannerPage() {
         }));
       }
 
-      setPath(pts.length >= 2 ? pts : null);
+      setPath(pts && pts.length >= 2 ? pts : null);
       setLegs(legInfos);
     } catch (e: any) {
       setPath(null);
