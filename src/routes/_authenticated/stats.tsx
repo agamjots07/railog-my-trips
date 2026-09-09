@@ -708,3 +708,43 @@ function ModeBar({
     </div>
   );
 }
+
+const COVERAGE_LABEL: Record<CoverageLevel["kind"], string> = {
+  country: "Country",
+  region: "Province / State",
+  city: "City",
+};
+
+function CoverageBar({ level }: { level: CoverageLevel }) {
+  const pct = level.pct ?? 0;
+  const width = level.pct == null ? 0 : Math.max(Math.min(pct, 100), pct > 0 ? 1.5 : 0);
+  const fmtKm = (km: number) =>
+    km >= 1000 ? `${Math.round(km).toLocaleString()}` : km.toFixed(km < 10 ? 2 : 1);
+  return (
+    <div>
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+            {COVERAGE_LABEL[level.kind]}
+          </p>
+          <p className="mt-0.5 truncate text-sm font-bold">{level.name}</p>
+        </div>
+        <p className="shrink-0 font-mono text-xl font-bold tabular-nums text-primary">
+          {level.pct == null ? "—" : `${pct < 0.01 ? pct.toFixed(3) : pct.toFixed(2)}%`}
+        </p>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-background/60">
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${width}%`, background: "var(--gradient-primary)" }}
+        />
+      </div>
+      <p className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+        {fmtKm(level.coveredKm)} km covered
+        {level.totalKm != null
+          ? ` of ${Math.round(level.totalKm).toLocaleString()} km`
+          : " · total road length unavailable"}
+      </p>
+    </div>
+  );
+}
