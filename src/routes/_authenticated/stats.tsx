@@ -13,6 +13,8 @@ import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
 import { reverseGeocode, reverseGeocodeDetail } from "@/lib/reverseGeocode";
 import { EmptyState } from "@/components/EmptyState";
+import { useRoadCoverage } from "@/lib/useRoadCoverage";
+import type { CoverageLevel } from "@/lib/roadCoverage";
 
 export const Route = createFileRoute("/_authenticated/stats")({
   head: () => ({ meta: [{ title: "Stats — Pencer" }] }),
@@ -27,6 +29,7 @@ function StatsPage() {
   const [roadLabels, setRoadLabels] = useState<Record<string, { o: string; d: string }>>({});
   const [roadDetails, setRoadDetails] = useState<Record<string, { roads: string[]; cities: string[] }>>({});
   const [busiestExpanded, setBusiestExpanded] = useState(false);
+  const coverage = useRoadCoverage(trips);
 
   useEffect(() => {
     supabase.from("trips").select("*").then(({ data }) => setTrips(data ?? []));
