@@ -531,6 +531,41 @@ function StatsPage() {
         );
       })()}
 
+      {/* Roads coverage */}
+      {(coverage.driveCount > 0 || coverage.loading) && (
+        <>
+          <h2 className="mt-8 mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+            <Globe className="h-3.5 w-3.5" /> Roads coverage
+          </h2>
+          <div
+            className="rounded-3xl border border-white/[0.06] bg-card p-5"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          >
+            <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
+              How much of the road network you've actually driven, from GPS-recorded
+              Drive trips only. Repeated streets count once.
+            </p>
+            {coverage.loading && coverage.levels.length === 0 ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 animate-pulse rounded-2xl bg-white/[0.04]" />
+                ))}
+              </div>
+            ) : coverage.levels.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No GPS-recorded drives yet — start a live Drive trip to begin covering roads.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {coverage.levels.map((l) => (
+                  <CoverageBar key={`${l.kind}-${l.name}`} level={l} />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* Achievements */}
       <h2 className="mt-8 mb-3 flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
         <span>Achievements</span>
