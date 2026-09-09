@@ -30,10 +30,13 @@ export function useRoadCoverage(trips: Trip[] | null): RoadCoverage {
     if (!trips) return;
     let cancelled = false;
 
+    // A GPS-recorded drive: it either is/was a live recording, carries recorded
+    // speed data, or has a dense track (manual logs only store a few waypoints).
     const drives = trips.filter((t) => {
-      if (t.mode !== "taxi" || !t.is_live) return false;
+      if (t.mode !== "taxi") return false;
       const geo = t.route_geometry as unknown as LatLng[] | null;
-      return Array.isArray(geo) && geo.length >= 2;
+      if (!Array.isArray(geo) || geo.length < 2) return false;
+      return Boolean(t.is_live) || t.max_speed_kmh != null || t.avg_speed_kmh != null || geo.length > 30;
     });
 
     if (drives.length === 0) {
