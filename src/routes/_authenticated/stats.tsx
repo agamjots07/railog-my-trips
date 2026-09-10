@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
-import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3, Car, Gauge, Moon, Building2, CalendarDays } from "lucide-react";
+import { Train, Ship, Route as RouteIcon, Clock, MapPin, TrendingUp, Flame, Trophy, Lock, Globe, BarChart3, Car, Gauge, Moon, Building2, CalendarDays, Search, Loader2 } from "lucide-react";
 import {
   ACHIEVEMENTS,
   bestStreak,
@@ -562,6 +562,7 @@ function StatsPage() {
                 ))}
               </div>
             )}
+            <CoverageSearch search={coverage.search} />
           </div>
         </>
       )}
@@ -745,6 +746,68 @@ function CoverageBar({ level }: { level: CoverageLevel }) {
           ? ` of ${Math.round(level.totalKm).toLocaleString()} km`
           : " · total road length unavailable"}
       </p>
+    </div>
+  );
+}
+
+function CoverageSearch({
+  search,
+}: {
+  search: (q: string) => Promise<CoverageLevel | { error: string }>;
+}) {
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<CoverageLevel | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    const query = q.trim();
+    if (!query || busy) return;
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    const res = await search(query);
+    if ("error" in res) setError(res.error);
+    else setResult(res);
+    setBusy(false);
+  };
+
+  return (
+    <div className="mt-5 border-t border-white/[0.06] pt-4">
+      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">
+        Look up any place
+      </p>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") void run(); }}
+            placeholder="City, province/state or country"
+            className="w-full rounded-2xl border border-white/[0.08] bg-background/60 py-2.5 pl-9 pr-3 text-sm outline-none placeholder:text-muted-foreground focus:border-primary/50"
+          />
+        </div>
+        <button
+          onClick={() => void run()}
+          disabled={busy || q.trim().length < 2}
+          className="rounded-2xl px-4 text-sm font-bold text-primary-foreground disabled:opacity-40"
+          style={{ background: "var(--gradient-primary)" }}
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check"}
+        </button>
+      </div>
+      {busy && (
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Measuring the road network — this can take a moment the first time.
+        </p>
+      )}
+      {error && <p className="mt-2 text-[11px] text-destructive">{error}</p>}
+      {result && (
+        <div className="mt-4">
+          <CoverageBar level={result} />
+        </div>
+      )}
     </div>
   );
 }
