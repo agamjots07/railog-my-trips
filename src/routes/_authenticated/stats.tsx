@@ -562,6 +562,7 @@ function StatsPage() {
                 ))}
               </div>
             )}
+            <CoverageSearch search={coverage.search} />
           </div>
         </>
       )}
