@@ -33,13 +33,20 @@ function cellKey(lat: number, lng: number): string {
   return `${Math.round(lat / dLat)}:${Math.round(lng / dLng)}`;
 }
 
+export type Bbox = { south: number; west: number; north: number; east: number };
+
+function inBbox(p: LatLng, b: Bbox): boolean {
+  return p[0] >= b.south && p[0] <= b.north && p[1] >= b.west && p[1] <= b.east;
+}
+
 /** Add every ~25 m step along a GPS track to `cells`. */
-export function addTrackCells(track: LatLng[], cells: Set<string>): void {
+export function addTrackCells(track: LatLng[], cells: Set<string>, bbox?: Bbox): void {
   if (!track || track.length < 2) return;
   for (let i = 1; i < track.length; i++) {
     const a = track[i - 1];
     const b = track[i];
     if (!a || !b) continue;
+    if (bbox && !(inBbox(a, bbox) || inBbox(b, bbox))) continue;
     const segKm = haversineKm(a, b);
     // Ignore absurd jumps (GPS glitches / teleports).
     if (segKm > 2) continue;
