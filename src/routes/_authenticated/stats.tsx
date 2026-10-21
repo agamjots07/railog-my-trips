@@ -19,7 +19,7 @@ import { useRoadCoverage } from "@/lib/useRoadCoverage";
 import type { CoverageLevel } from "@/lib/roadCoverage";
 
 export const Route = createFileRoute("/_authenticated/stats")({
-  head: () => ({ meta: [{ title: "Stats — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Stats — Pencer" }, { name: "description", content: "Compare Driver and Passenger distance, trips and time alongside your transit statistics." }, { property: "og:title", content: "Stats — Pencer" }, { property: "og:description", content: "Compare Driver and Passenger distance, trips and time alongside your transit statistics." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: StatsPage,
 });
 

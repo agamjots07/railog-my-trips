@@ -14,7 +14,7 @@ import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 
 
 export const Route = createFileRoute("/_authenticated/map")({
-  head: () => ({ meta: [{ title: "Journey Map — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Journey Map — Pencer" }, { name: "description", content: "Explore your recorded journeys with separate Driver and Passenger filters." }, { property: "og:title", content: "Journey Map — Pencer" }, { property: "og:description", content: "Explore your recorded journeys with separate Driver and Passenger filters." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: JourneyMapPage,
 });
 

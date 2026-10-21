@@ -17,7 +17,7 @@ import { isGoTrip } from "@/lib/goTrains";
 
 
 export const Route = createFileRoute("/_authenticated/trip/$id")({
-  head: () => ({ meta: [{ title: "Trip — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Trip — Pencer" }, { name: "description", content: "View your saved journey, GPS route, distance, speed and transport mode." }, { property: "og:title", content: "Trip — Pencer" }, { property: "og:description", content: "View your saved journey, GPS route, distance, speed and transport mode." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: TripDetail,
 });
 

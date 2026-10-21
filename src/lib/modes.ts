@@ -47,8 +47,8 @@ export const MODE_COLOR: Record<TripMode, string> = {
   train: "#a78bfa",      // purple
   ferry: "#60a5fa",      // blue
   taxi: "#fb923c",       // orange
-  driver: "var(--driver)",
-  passenger: "var(--passenger)",
+  get driver() { return typeof window === "undefined" ? MODE_COLOR.atv : getComputedStyle(document.documentElement).getPropertyValue("--driver").trim() || MODE_COLOR.atv; },
+  get passenger() { return typeof window === "undefined" ? MODE_COLOR.taxi : getComputedStyle(document.documentElement).getPropertyValue("--passenger").trim() || MODE_COLOR.taxi; },
   bus: "#f43f5e",        // rose
   jetski: "#22d3ee",     // cyan
   atv: "#84cc16",        // lime

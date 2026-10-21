@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { isRecordingActive } from "@/lib/liveRecovery";
 
 export const Route = createFileRoute("/_authenticated/")({
-  head: () => ({ meta: [{ title: "Your trips — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Your trips — Pencer" }, { name: "description", content: "Your personal GPS trip history, including Driver and Passenger journeys." }, { property: "og:title", content: "Your trips — Pencer" }, { property: "og:description", content: "Your personal GPS trip history, including Driver and Passenger journeys." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: FeedPage,
 });
 

@@ -39,7 +39,7 @@ const fmtHM = (s: number) => {
 };
 
 export const Route = createFileRoute("/_authenticated/new")({
-  head: () => ({ meta: [{ title: "Log a trip — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Log a trip — Pencer" }, { name: "description", content: "Record Driver and Passenger journeys with live GPS, or log transit rides." }, { property: "og:title", content: "Log a trip — Pencer" }, { property: "og:description", content: "Record Driver and Passenger journeys with live GPS, or log transit rides." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: NewTrip,
 });
 

@@ -6,7 +6,7 @@ import { Train, Ship } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Sign in — Pencer" }, { name: "description", content: "Sign in to Pencer to access your personal travel history." }, { property: "og:title", content: "Sign in — Pencer" }, { property: "og:description", content: "Sign in to Pencer to access your personal travel history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: LoginPage,
 });
 
