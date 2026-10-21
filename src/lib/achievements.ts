@@ -1,6 +1,6 @@
 import type { Tables } from "@/integrations/supabase/types";
 import type { TripMode } from "@/lib/modes";
-import { isAdventure } from "@/lib/modes";
+import { isAdventure, isRoadMode } from "@/lib/modes";
 import { Award, Flame, Map, Mountain, Ship, Sparkles, Train, Trophy, Zap, type LucideIcon } from "lucide-react";
 
 type Trip = Tables<"trips">;
@@ -50,10 +50,10 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     id: "first_taxi",
     title: "Hit the Road",
-    description: "Your first Drive trip logged.",
+    description: "Your first Driver or Passenger trip logged.",
     icon: Zap,
     color: "#fb923c",
-    earned: (t) => t.some((x) => x.mode === "taxi"),
+    earned: (t) => t.some((x) => isRoadMode(x.mode)),
   },
   {
     id: "ten_trips",

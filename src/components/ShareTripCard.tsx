@@ -6,7 +6,7 @@ import { MapContainer, TileLayer, Polyline, CircleMarker, useMap } from "react-l
 import L from "leaflet";
 import { Download, Share2, X, MapPin, Loader2 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
-import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { MODE_COLOR, MODE_ICON, MODE_LABEL, isRoadMode, type TripMode } from "@/lib/modes";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { reverseGeocode } from "@/lib/reverseGeocode";
 import { GoogleMapCanvas, useMapProvider, waitForTilesLoaded } from "@/components/GoogleMapCanvas";
@@ -91,9 +91,9 @@ export function ShareTripCard({
 
   // Title: vehicle name for taxi, else route_name or origin → destination
   const title = useMemo(() => {
-    if (mode === "taxi") {
+    if (isRoadMode(mode)) {
       if (vehicle?.name) return vehicle.name;
-      return "Drive";
+      return MODE_LABEL[mode];
     }
     if (trip.route_name) return trip.route_name;
     return `${trip.origin} → ${trip.destination}`;

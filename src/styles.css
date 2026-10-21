@@ -65,6 +65,8 @@
   --ring: oklch(0.82 0.18 152);
   --train: oklch(0.82 0.18 152);
   --ferry: oklch(0.74 0.16 228);
+  --driver: #84cc16;
+  --passenger: #fb923c;
   --chart-1: oklch(0.82 0.18 152);
   --chart-2: oklch(0.74 0.16 228);
   --chart-3: oklch(0.82 0.17 78);

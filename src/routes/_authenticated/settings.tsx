@@ -3,7 +3,7 @@ import { Car, ChevronRight, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Settings — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Settings — Pencer" }, { name: "description", content: "Manage your Pencer travel preferences and Garage." }, { property: "og:title", content: "Settings — Pencer" }, { property: "og:description", content: "Manage your Pencer travel preferences and Garage." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SettingsPage,
 });
 

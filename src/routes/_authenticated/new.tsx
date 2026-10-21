@@ -7,6 +7,8 @@ import { TripMap } from "@/components/TripMap";
 import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
+import { Button } from "@/components/ui/button";
+import { beat } from "@/lib/liveRecovery";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -15,6 +17,7 @@ import {
   MODE_LABEL,
   isAdventure,
   isLiveOnly,
+  showsGarage,
   type Category,
   type TripMode,
 } from "@/lib/modes";
@@ -37,7 +40,7 @@ const fmtHM = (s: number) => {
 };
 
 export const Route = createFileRoute("/_authenticated/new")({
-  head: () => ({ meta: [{ title: "Log a trip — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Log a trip — Pencer" }, { name: "description", content: "Record Driver and Passenger journeys with live GPS, or log transit rides." }, { property: "og:title", content: "Log a trip — Pencer" }, { property: "og:description", content: "Record Driver and Passenger journeys with live GPS, or log transit rides." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: NewTrip,
 });
 
@@ -45,7 +48,8 @@ const CATEGORIES: { value: Category; label: string }[] = [
   { value: "train", label: "Train" },
   { value: "ferry", label: "Ferry" },
   { value: "bus", label: "Bus" },
-  { value: "taxi", label: "Drive" },
+  { value: "driver", label: "Driver" },
+  { value: "passenger", label: "Passenger" },
   { value: "adventure", label: "Adventure" },
 ];
 
@@ -227,8 +231,8 @@ function NewTrip() {
 
       let geometry: [number, number][] | null = null;
       if (usePreview) {
-        geometry = preview!.path;
-        distance = preview!.km;
+        geometry = preview?.path ?? null;
+        distance = preview?.km ?? distance;
       } else if (!isLive && o && d) {
         try {
           geometry = await fetchRouteGeometry(o, d, legMode);
@@ -265,11 +269,12 @@ function NewTrip() {
           avg_speed_kmh: avgSpeedKmh,
           notes: notes || null,
           is_live: isLive,
-          vehicle_id: mode === "taxi" && vehicleId ? vehicleId : null,
+          vehicle_id: showsGarage(mode) && vehicleId ? vehicleId : null,
         })
         .select("id")
         .single();
       if (error) throw error;
+      if (isLive) beat(data.id);
       toast.success(isLive ? "Trip started!" : geometry ? "Trip logged with route shape" : "Trip logged");
       nav({ to: "/trip/$id", params: { id: data.id } });
     } catch (err) {
@@ -307,11 +312,13 @@ function NewTrip() {
 
       <form onSubmit={submit} className="mt-7 space-y-4">
         {/* Category picker */}
-        <div className="grid grid-cols-5 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
+        <div className="grid grid-cols-3 gap-1 rounded-2xl border border-white/[0.06] bg-card/60 p-1 backdrop-blur-xl">
           {CATEGORIES.map((c) => {
             const active = c.value === category;
             return (
-              <button
+              <Button
+                variant={active ? "default" : "ghost"}
+                aria-pressed={active}
                 key={c.value}
                 type="button"
                 onClick={() => setCategoryAndMode(c.value)}
@@ -322,7 +329,7 @@ function NewTrip() {
                 }`}
               >
                 {c.label}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -526,7 +533,7 @@ function NewTrip() {
                 className={inputCls}
               />
             </Field>
-            {mode === "taxi" && (
+            {showsGarage(mode) && (
               <>
                 <Divider />
                 <Field label="Vehicle">

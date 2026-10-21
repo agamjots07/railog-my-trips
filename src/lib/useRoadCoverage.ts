@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { isRoadMode } from "./modes";
 import type { Tables } from "@/integrations/supabase/types";
 import {
   addTrackCells,
@@ -36,7 +37,7 @@ function readLevelsCache(sig: string): CoverageLevel[] | null {
 }
 
 function isGpsDrive(t: Trip): boolean {
-  if (t.mode !== "taxi") return false;
+  if (!isRoadMode(t.mode)) return false;
   const geo = t.route_geometry as unknown as LatLng[] | null;
   if (!Array.isArray(geo) || geo.length < 2) return false;
   return Boolean(t.is_live) || t.max_speed_kmh != null || t.avg_speed_kmh != null || geo.length > 30;
@@ -86,7 +87,8 @@ export function useRoadCoverage(trips: Trip[] | null): RoadCoverage & {
 
       for (const t of drives) {
         const geo = t.route_geometry as unknown as LatLng[];
-        const mid = geo[Math.floor(geo.length / 2)] ?? geo[0]!;
+        const mid = geo[Math.floor(geo.length / 2)] ?? geo[0];
+        if (!mid) continue;
         const area = await lookupArea(mid);
         if (cancelled) return;
         if (!area) continue;

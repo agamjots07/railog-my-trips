@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { Navigation } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Polyline, Popup, useMap } from "react-leaflet";
@@ -7,13 +8,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { fmtDate } from "@/lib/geo";
 import { cn } from "@/lib/utils";
-import { MODE_COLOR, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { MODE_COLOR, MODE_LABEL, roadRole, isRoadMode, matchesRoadFilter, type TripMode } from "@/lib/modes";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 
 
 export const Route = createFileRoute("/_authenticated/map")({
-  head: () => ({ meta: [{ title: "Journey Map — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Journey Map — Pencer" }, { name: "description", content: "Explore your recorded journeys with separate Driver and Passenger filters." }, { property: "og:title", content: "Journey Map — Pencer" }, { property: "og:description", content: "Explore your recorded journeys with separate Driver and Passenger filters." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: JourneyMapPage,
 });
 
@@ -37,7 +38,8 @@ const SUB_LABELS: Record<SubMode, string> = {
 function classify(trip: Trip): SubMode {
   const m = trip.mode as TripMode;
   if (m === "ferry") return "ferry";
-  if (m === "taxi") return "taxi";
+  const role = roadRole(m);
+  if (role) return role;
   if (m === "bus") return "bus";
   if (m === "jetski" || m === "atv" || m === "skateboard" || m === "gondola") return m;
   // train — refine into lrt/monorail by name keywords
@@ -89,6 +91,7 @@ const ADV_SET = new Set<SubMode>(["jetski", "atv", "skateboard", "gondola"]);
 function JourneyMapPage() {
   const [trips, setTrips] = useState<Trip[] | null>(null);
   const [vehicles, setVehicles] = useState<Tables<"vehicles">[]>([]);
+  const [roadFilter, setRoadFilter] = useState<"both" | "driver" | "passenger">("both");
   const [tab, setTab] = useState<Tab>("all");
   const [vehicleFilter, setVehicleFilter] = useState<Set<string>>(new Set());
   const [vehicleMenuOpen, setVehicleMenuOpen] = useState(false);
@@ -118,12 +121,13 @@ function JourneyMapPage() {
     let list = enriched;
     if (tab === "water") list = list.filter((x) => x.sub === "ferry");
     else if (tab === "rail") list = list.filter((x) => RAIL_SET.has(x.sub));
-    else if (tab === "road") list = list.filter((x) => x.sub === "taxi");
+    else if (tab === "road") list = list.filter((x) => isRoadMode(x.sub));
     else if (tab === "bus") list = list.filter((x) => x.sub === "bus");
     else if (tab === "adventure") list = list.filter((x) => ADV_SET.has(x.sub));
+    if (tab === "all" || tab === "road") list = list.filter((x) => !isRoadMode(x.sub) || matchesRoadFilter(x.sub, roadFilter));
     if (vehicleFilter.size > 0) list = list.filter((x) => x.trip.vehicle_id && vehicleFilter.has(x.trip.vehicle_id));
     return list;
-  }, [enriched, tab, vehicleFilter]);
+  }, [enriched, tab, vehicleFilter, roadFilter]);
 
   const allPoints = useMemo(() => visible.flatMap((x) => x.path), [visible]);
 
@@ -134,7 +138,7 @@ function JourneyMapPage() {
       : tab === "rail"
         ? ["train", "lrt", "monorail"]
         : tab === "road"
-          ? ["taxi"]
+          ? ["driver", "passenger"]
           : tab === "bus"
             ? ["bus"]
             : tab === "adventure"
@@ -272,6 +276,16 @@ function JourneyMapPage() {
             </button>
           ))}
         </div>
+
+        {(tab === "all" || tab === "road") && (
+          <div role="group" aria-label="Road trip role" className="pointer-events-auto mt-2 flex w-fit gap-1 rounded-lg border border-border bg-card/90 p-1 backdrop-blur-xl">
+            {(["both", "driver", "passenger"] as const).map((role) => (
+              <Button key={role} size="sm" variant={roadFilter === role ? "default" : "ghost"} aria-pressed={roadFilter === role} onClick={() => setRoadFilter(role)}>
+                {role === "both" ? "Both" : MODE_LABEL[role]}
+              </Button>
+            ))}
+          </div>
+        )}
 
         {vehicles.length > 0 && (tab === "all" || tab === "road") && (() => {
           const selected = vehicleFilter.size;

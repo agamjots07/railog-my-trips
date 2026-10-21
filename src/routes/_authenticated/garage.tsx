@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { CAR_MAKES, CAR_YEARS } from "@/lib/carDatabase";
 
 export const Route = createFileRoute("/_authenticated/garage")({
-  head: () => ({ meta: [{ title: "Garage — Pencer" }] }),
+  head: () => ({ meta: [{ title: "Garage — Pencer" }, { name: "description", content: "Manage the vehicles attached to your Passenger journeys." }, { property: "og:title", content: "Garage — Pencer" }, { property: "og:description", content: "Manage the vehicles attached to your Passenger journeys." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: GaragePage,
 });
 
@@ -126,7 +126,7 @@ function GaragePage() {
             </div>
             <p className="text-sm font-bold">No vehicles yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add one to attach it to Drive trips.
+              Add one to attach it to Passenger trips.
             </p>
           </div>
         )}
