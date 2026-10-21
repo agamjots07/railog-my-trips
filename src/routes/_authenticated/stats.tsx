@@ -326,7 +326,7 @@ function StatsPage() {
         <Tile label="Trips" value={`${stats.total}`} icon={RouteIcon} />
         <Tile label="Time" value={fmtH(stats.totalMin)} icon={Clock} />
         <Tile label="Avg trip" value={stats.total ? `${(stats.totalKm / stats.total).toFixed(0)} km` : "0 km"} icon={MapPin} />
-        <Tile label="Modes" value={`${stats.train + stats.ferry}`} sub={`${stats.train}T · ${stats.ferry}F`} icon={Train} />
+        <Tile label="Modes" value={`${new Set(trips?.map((t) => t.mode)).size}`} sub={`${stats.roadRoles.driver.count} Driver · ${stats.roadRoles.passenger.count} Passenger`} icon={Train} />
       </div>
 
       {/* Fun distance comparisons */}

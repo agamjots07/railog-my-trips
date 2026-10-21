@@ -8,6 +8,7 @@ import { haversineKm } from "@/lib/geo";
 import { fetchRouteGeometry, type StationHit } from "@/lib/transitland";
 import { StationAutocomplete } from "@/components/StationAutocomplete";
 import { Button } from "@/components/ui/button";
+import { beat } from "@/lib/liveRecovery";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import {
@@ -273,6 +274,7 @@ function NewTrip() {
         .select("id")
         .single();
       if (error) throw error;
+      if (isLive) beat(data.id);
       toast.success(isLive ? "Trip started!" : geometry ? "Trip logged with route shape" : "Trip logged");
       nav({ to: "/trip/$id", params: { id: data.id } });
     } catch (err) {
@@ -315,7 +317,7 @@ function NewTrip() {
             const active = c.value === category;
             return (
               <Button
-                variant="ghost"
+                variant={active ? "default" : "ghost"}
                 aria-pressed={active}
                 key={c.value}
                 type="button"
