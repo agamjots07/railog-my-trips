@@ -126,7 +126,7 @@ function GaragePage() {
             </div>
             <p className="text-sm font-bold">No vehicles yet</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Add one to attach it to Drive trips.
+              Add one to attach it to Passenger trips.
             </p>
           </div>
         )}

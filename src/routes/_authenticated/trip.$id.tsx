@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
 import { isRecordingActive, finalizeFromSaved } from "@/lib/liveRecovery";
 import { RouteBuilder } from "@/components/RouteBuilder";
-import { MODE_COLOR, MODE_ICON, MODE_LABEL, type TripMode } from "@/lib/modes";
+import { MODE_COLOR, MODE_ICON, MODE_LABEL, TRIP_MODES, isRoadMode, type TripMode } from "@/lib/modes";
 import { ShareTripCard } from "@/components/ShareTripCard";
 import { GoTrainCard } from "@/components/GoTrainCard";
 import { usePlayback, PlaybackControls } from "@/components/TripPlayback";
@@ -271,7 +271,7 @@ function TripDetail() {
             Transport mode
           </p>
           <div className="grid grid-cols-4 gap-1.5">
-            {(Object.keys(MODE_LABEL) as TripMode[]).map((m) => {
+            {TRIP_MODES.map((m) => {
               const MIcon = MODE_ICON[m];
               const active = m === mode;
               return (
@@ -391,7 +391,7 @@ function TripDetail() {
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
       </div>
 
-      {mode === "taxi" && !isLive && (
+      {isRoadMode(mode) && !isLive && (
         <p className="mt-3 text-center text-[12px] font-semibold text-muted-foreground">
           Started {fmtClock(trip.start_time)}
           {trip.end_time ? ` — Ended ${fmtClock(trip.end_time)}` : ""}

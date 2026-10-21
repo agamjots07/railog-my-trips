@@ -6,7 +6,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { Train, LogOut, ArrowRight, AlertTriangle } from "lucide-react";
 import { fmtDate, fmtDuration } from "@/lib/geo";
 import { toast } from "sonner";
-import { MODE_COLOR, MODE_ICON, type TripMode } from "@/lib/modes";
+import { MODE_COLOR, MODE_ICON, MODE_LABEL, isRoadMode, type TripMode } from "@/lib/modes";
 import { AchievementCelebration } from "@/components/AchievementCelebration";
 import { useAchievementQueue } from "@/lib/useAchievementQueue";
 import { EmptyState } from "@/components/EmptyState";
@@ -152,7 +152,7 @@ function TripCard({ trip, vehicle }: { trip: Trip; vehicle?: Vehicle }) {
   const Icon = MODE_ICON[mode] ?? MODE_ICON.train;
   const color = MODE_COLOR[mode] ?? MODE_COLOR.train;
   const live = trip.is_live && !trip.end_time;
-  const driveLabel = mode === "taxi" ? (vehicle?.name || "Drive") : null;
+  const driveLabel = isRoadMode(mode) ? `${MODE_LABEL[mode]}${vehicle?.name ? ` · ${vehicle.name}` : ""}` : null;
 
   return (
     <Link

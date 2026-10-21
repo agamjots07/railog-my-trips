@@ -9,6 +9,8 @@ import {
   currentStreak,
   earnedAchievements,
 } from "@/lib/achievements";
+import { isRoadMode } from "@/lib/modes";
+import { roadBreakdown } from "@/lib/roadStats";
 import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
 import { reverseGeocode, reverseGeocodeDetail } from "@/lib/reverseGeocode";
@@ -45,7 +47,7 @@ function StatsPage() {
       const generic = new Set(["Live start", "Live", "", null, undefined]);
       const next: Record<string, { o: string; d: string }> = {};
       for (const t of trips) {
-        if (t.mode !== "taxi") continue;
+        if (!isRoadMode(t.mode)) continue;
         if (!generic.has(t.origin as string) && !generic.has(t.destination as string)) continue;
         const geo = t.route_geometry as unknown as [number, number][] | null;
         if (!geo || geo.length < 2) continue;
@@ -88,7 +90,7 @@ function StatsPage() {
     if (!trips) return;
     let cancelled = false;
     (async () => {
-      const roadTrips = trips.filter((t) => t.mode === "taxi");
+      const roadTrips = trips.filter((t) => isRoadMode(t.mode));
       for (const t of roadTrips) {
         if (roadDetails[t.id]) continue;
         const geo = t.route_geometry as unknown as [number, number][] | null;
@@ -135,7 +137,7 @@ function StatsPage() {
     const top = [...routes.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
     // Road-trip specific stats
-    const roadTrips = trips.filter((t) => t.mode === "taxi");
+    const roadTrips = trips.filter((t) => isRoadMode(t.mode));
     const roadRoutes = new Map<string, number>();
     const roadVehicles = new Map<string, number>();
     let roadMin = 0;
@@ -145,7 +147,7 @@ function StatsPage() {
       const resolved = roadLabels[t.id];
       const key = resolved
         ? `${resolved.o} → ${resolved.d}`
-        : (t.route_name || `${t.origin} → ${t.destination}`);
+        : `${t.origin} → ${t.destination}`;
       roadRoutes.set(key, (roadRoutes.get(key) ?? 0) + 1);
       if (t.vehicle_id) roadVehicles.set(t.vehicle_id, (roadVehicles.get(t.vehicle_id) ?? 0) + 1);
       if (t.end_time) {
@@ -204,6 +206,7 @@ function StatsPage() {
 
     return {
       totalKm, totalMin, train, ferry, trainKm, ferryKm,
+      roadRoles: roadBreakdown(trips),
       total: trips.length, top,
       records: personalRecords(trips),
       streak: currentStreak(trips),
@@ -389,6 +392,8 @@ function StatsPage() {
       <div className="space-y-3">
         <ModeBar icon={Train} label="Train" count={stats.train} km={stats.trainKm} total={stats.total} gradient="var(--gradient-primary)" />
         <ModeBar icon={Ship} label="Ferry" count={stats.ferry} km={stats.ferryKm} total={stats.total} gradient="var(--gradient-ferry)" />
+        <ModeBar icon={Car} label="Driver" count={stats.roadRoles.driver.count} km={stats.roadRoles.driver.km} total={stats.total} gradient="var(--driver)" />
+        <ModeBar icon={Car} label="Passenger" count={stats.roadRoles.passenger.count} km={stats.roadRoles.passenger.km} total={stats.total} gradient="var(--passenger)" />
       </div>
 
       {/* Road stats */}
@@ -421,10 +426,12 @@ function StatsPage() {
                 sub={r.topVehicleId ? `${r.topVehicleCount} ${r.topVehicleCount === 1 ? "trip" : "trips"}` : undefined}
               />
               <div className="my-3 h-px bg-white/[0.05]" />
+              <RoadRow icon={Clock} label="Total time as driver" value={fmtH(stats.roadRoles.driver.minutes)} />
+              <div className="my-3 h-px bg-border" />
               <RoadRow
                 icon={Clock}
                 label="Total time as passenger"
-                value={fmtH(r.totalMin)}
+                value={fmtH(stats.roadRoles.passenger.minutes)}
               />
               <div className="my-3 h-px bg-white/[0.05]" />
               <RoadRow
@@ -477,7 +484,7 @@ function StatsPage() {
                       const count = r.dayCounts[i] ?? 0;
                       const max = Math.max(...r.dayCounts, 1);
                       const pct = (count / max) * 100;
-                      const isTop = count > 0 && count === r.busiestDay!.count;
+                      const isTop = count > 0 && count === r.busiestDay?.count;
                       return (
                         <div key={i} className="flex flex-1 flex-col items-center gap-1.5">
                           <span className="font-mono text-[10px] font-bold tabular-nums text-muted-foreground">
@@ -543,7 +550,7 @@ function StatsPage() {
           >
             <p className="mb-4 text-[11px] leading-relaxed text-muted-foreground">
               How much of the road network you've actually driven, from GPS-recorded
-              Drive trips only. Repeated streets count once.
+              Driver and Passenger trips only. Repeated streets count once.
             </p>
             {coverage.loading && coverage.levels.length === 0 ? (
               <div className="space-y-4">
@@ -553,7 +560,7 @@ function StatsPage() {
               </div>
             ) : coverage.levels.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No GPS-recorded drives yet — start a live Drive trip to begin covering roads.
+                No GPS-recorded drives yet — start a live Driver or Passenger trip to begin covering roads.
               </p>
             ) : (
               <div className="space-y-5">
