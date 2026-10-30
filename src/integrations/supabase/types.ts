@@ -267,6 +267,7 @@ export type Database = {
           destination_lng: number | null
           destination_osm_id: string | null
           distance_km: number | null
+          duration_s: number | null
           end_time: string | null
           id: string
           is_live: boolean
@@ -279,6 +280,8 @@ export type Database = {
           origin_osm_id: string | null
           route_geometry: Json | null
           route_name: string | null
+          rovy_destination_pending: boolean
+          rovy_drive_id: string | null
           start_time: string
           updated_at: string
           user_id: string
@@ -292,6 +295,7 @@ export type Database = {
           destination_lng?: number | null
           destination_osm_id?: string | null
           distance_km?: number | null
+          duration_s?: number | null
           end_time?: string | null
           id?: string
           is_live?: boolean
@@ -304,6 +308,8 @@ export type Database = {
           origin_osm_id?: string | null
           route_geometry?: Json | null
           route_name?: string | null
+          rovy_destination_pending?: boolean
+          rovy_drive_id?: string | null
           start_time: string
           updated_at?: string
           user_id: string
@@ -317,6 +323,7 @@ export type Database = {
           destination_lng?: number | null
           destination_osm_id?: string | null
           distance_km?: number | null
+          duration_s?: number | null
           end_time?: string | null
           id?: string
           is_live?: boolean
@@ -329,6 +336,8 @@ export type Database = {
           origin_osm_id?: string | null
           route_geometry?: Json | null
           route_name?: string | null
+          rovy_destination_pending?: boolean
+          rovy_drive_id?: string | null
           start_time?: string
           updated_at?: string
           user_id?: string

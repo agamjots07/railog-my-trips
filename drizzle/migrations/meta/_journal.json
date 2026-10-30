@@ -8,6 +8,13 @@
       "when": 1792560369497,
       "tag": "0000_add_driver_passenger_modes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793387741242,
+      "tag": "0001_rovy_trip_import",
+      "breakpoints": true
     }
   ]
 }
