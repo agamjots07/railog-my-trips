@@ -27,9 +27,9 @@ export async function geocode(query: string): Promise<{ lat: number; lng: number
   }
 }
 
-export function fmtDuration(startISO: string, endISO?: string | null): string {
-  if (!endISO) return "—";
-  const ms = new Date(endISO).getTime() - new Date(startISO).getTime();
+export function fmtDuration(startISO: string, endISO?: string | null, durationSeconds?: number | null): string {
+  if (!endISO && durationSeconds == null) return "—";
+  const ms = durationSeconds != null ? durationSeconds * 1000 : new Date(endISO ?? startISO).getTime() - new Date(startISO).getTime();
   if (ms <= 0) return "—";
   const mins = Math.round(ms / 60000);
   if (mins < 60) return `${mins}m`;

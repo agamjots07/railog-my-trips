@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Car, ChevronRight, LogOut } from "lucide-react";
+import { Car, ChevronRight, LogOut, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -38,6 +38,11 @@ function SettingsPage() {
             <p className="text-[15px] font-bold">Garage</p>
             <p className="text-xs text-muted-foreground">Manage your vehicles</p>
           </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </Link>
+        <Link to="/import-rovy" className="flex items-center gap-4 border-t border-border px-5 py-4 transition hover:bg-accent">
+          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-secondary text-primary"><Upload className="h-5 w-5" /></span>
+          <div className="flex-1"><p className="text-[15px] font-bold">Import from Rovy</p></div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </Link>
       </div>
