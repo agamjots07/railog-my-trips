@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedGarageRouteImport } from './routes/_authenticated/garage'
+import { Route as AuthenticatedImportRovyRouteImport } from './routes/_authenticated/import-rovy'
 import { Route as AuthenticatedMapRouteImport } from './routes/_authenticated/map'
 import { Route as AuthenticatedNewRouteImport } from './routes/_authenticated/new'
 import { Route as AuthenticatedPlannerRouteImport } from './routes/_authenticated/planner'
@@ -37,6 +38,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedGarageRoute = AuthenticatedGarageRouteImport.update({
   id: '/garage',
   path: '/garage',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedImportRovyRoute = AuthenticatedImportRovyRouteImport.update({
+  id: '/import-rovy',
+  path: '/import-rovy',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMapRoute = AuthenticatedMapRouteImport.update({
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/login': typeof LoginRoute
   '/garage': typeof AuthenticatedGarageRoute
+  '/import-rovy': typeof AuthenticatedImportRovyRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
   '/planner': typeof AuthenticatedPlannerRoute
@@ -84,6 +91,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/garage': typeof AuthenticatedGarageRoute
+  '/import-rovy': typeof AuthenticatedImportRovyRoute
   '/map': typeof AuthenticatedMapRoute
   '/new': typeof AuthenticatedNewRoute
   '/planner': typeof AuthenticatedPlannerRoute
@@ -97,6 +105,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/garage': typeof AuthenticatedGarageRoute
+  '/_authenticated/import-rovy': typeof AuthenticatedImportRovyRoute
   '/_authenticated/map': typeof AuthenticatedMapRoute
   '/_authenticated/new': typeof AuthenticatedNewRoute
   '/_authenticated/planner': typeof AuthenticatedPlannerRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/garage'
+    | '/import-rovy'
     | '/map'
     | '/new'
     | '/planner'
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/garage'
+    | '/import-rovy'
     | '/map'
     | '/new'
     | '/planner'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/garage'
+    | '/_authenticated/import-rovy'
     | '/_authenticated/map'
     | '/_authenticated/new'
     | '/_authenticated/planner'
@@ -175,6 +187,13 @@ declare module '@tanstack/react-router' {
       path: '/garage'
       fullPath: '/garage'
       preLoaderRoute: typeof AuthenticatedGarageRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/import-rovy': {
+      id: '/_authenticated/import-rovy'
+      path: '/import-rovy'
+      fullPath: '/import-rovy'
+      preLoaderRoute: typeof AuthenticatedImportRovyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/map': {
@@ -224,6 +243,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedGarageRoute: typeof AuthenticatedGarageRoute
+  AuthenticatedImportRovyRoute: typeof AuthenticatedImportRovyRoute
   AuthenticatedMapRoute: typeof AuthenticatedMapRoute
   AuthenticatedNewRoute: typeof AuthenticatedNewRoute
   AuthenticatedPlannerRoute: typeof AuthenticatedPlannerRoute
@@ -235,6 +255,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedGarageRoute: AuthenticatedGarageRoute,
+  AuthenticatedImportRovyRoute: AuthenticatedImportRovyRoute,
   AuthenticatedMapRoute: AuthenticatedMapRoute,
   AuthenticatedNewRoute: AuthenticatedNewRoute,
   AuthenticatedPlannerRoute: AuthenticatedPlannerRoute,
