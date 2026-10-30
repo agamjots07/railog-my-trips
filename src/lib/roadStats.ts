@@ -1,6 +1,7 @@
 import { roadRole } from "./modes";
+import { tripSeconds } from "./tripDuration";
 
-type RoadTrip = { mode: string; distance_km: number | null; start_time: string; end_time: string | null };
+type RoadTrip = { mode: string; distance_km: number | null; start_time: string; end_time: string | null; duration_s?: number | null };
 
 export function roadBreakdown(trips: RoadTrip[]) {
   const result = {
@@ -13,10 +14,7 @@ export function roadBreakdown(trips: RoadTrip[]) {
     const group = result[role];
     group.count++;
     group.km += trip.distance_km ?? 0;
-    if (trip.end_time) {
-      const minutes = (Date.parse(trip.end_time) - Date.parse(trip.start_time)) / 60000;
-      if (Number.isFinite(minutes)) group.minutes += Math.max(0, minutes);
-    }
+    group.minutes += tripSeconds(trip) / 60;
   }
   return result;
 }

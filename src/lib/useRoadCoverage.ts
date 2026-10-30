@@ -40,7 +40,7 @@ function isGpsDrive(t: Trip): boolean {
   if (!isRoadMode(t.mode)) return false;
   const geo = t.route_geometry as unknown as LatLng[] | null;
   if (!Array.isArray(geo) || geo.length < 2) return false;
-  return Boolean(t.is_live) || t.max_speed_kmh != null || t.avg_speed_kmh != null || geo.length > 30;
+  return Boolean(t.rovy_drive_id) || Boolean(t.is_live) || t.max_speed_kmh != null || t.avg_speed_kmh != null || geo.length > 30;
 }
 
 /**
