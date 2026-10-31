@@ -102,7 +102,7 @@ export function ShareTripCard({
   const distance = trip.distance_km
     ? `${trip.distance_km.toFixed(trip.distance_km < 10 ? 1 : 0)}`
     : "—";
-  const duration = fmtDuration(trip.start_time, trip.end_time);
+  const duration = fmtDuration(trip.start_time, trip.end_time, trip.duration_s);
 
   const stops: LatLng[] = [
     trip.origin_lat != null && trip.origin_lng != null

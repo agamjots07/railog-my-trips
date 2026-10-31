@@ -208,7 +208,7 @@ function TripCard({ trip, vehicle }: { trip: Trip; vehicle?: Vehicle }) {
       <div className="relative mt-4 flex items-center gap-5 border-t border-white/[0.05] pt-3.5">
         <Stat label="Date" value={fmtDate(trip.start_time)} />
         <div className="h-8 w-px bg-white/[0.05]" />
-        <Stat label="Time" value={fmtDuration(trip.start_time, trip.end_time)} />
+        <Stat label="Time" value={fmtDuration(trip.start_time, trip.end_time, trip.duration_s)} />
         <div className="h-8 w-px bg-white/[0.05]" />
         <Stat
           label="Distance"

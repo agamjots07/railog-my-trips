@@ -11,6 +11,7 @@ import {
 } from "@/lib/achievements";
 import { isRoadMode } from "@/lib/modes";
 import { roadBreakdown } from "@/lib/roadStats";
+import { tripSeconds } from "@/lib/tripDuration";
 import { personalRecords } from "@/lib/personalRecords";
 import { distanceComparisons } from "@/lib/distanceComparisons";
 import { reverseGeocode, reverseGeocodeDetail } from "@/lib/reverseGeocode";
@@ -128,7 +129,7 @@ function StatsPage() {
     const routes = new Map<string, number>();
     for (const t of trips) {
       totalKm += t.distance_km ?? 0;
-      if (t.end_time) totalMin += (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
+      totalMin += tripSeconds(t) / 60;
       if (t.mode === "train") { train++; trainKm += t.distance_km ?? 0; }
       else if (t.mode === "ferry") { ferry++; ferryKm += t.distance_km ?? 0; }
       const key = t.route_name || `${t.origin} → ${t.destination}`;
@@ -150,16 +151,14 @@ function StatsPage() {
         : `${t.origin} → ${t.destination}`;
       roadRoutes.set(key, (roadRoutes.get(key) ?? 0) + 1);
       if (t.vehicle_id) roadVehicles.set(t.vehicle_id, (roadVehicles.get(t.vehicle_id) ?? 0) + 1);
-      if (t.end_time) {
-        roadMin += (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
-      }
+      roadMin += tripSeconds(t) / 60;
       if (t.distance_km != null && (!longest || t.distance_km > longest.km)) {
         longest = { trip: t, km: t.distance_km };
       }
       // avg speed: stored or derived
       let kmh: number | null = t.avg_speed_kmh ?? null;
       if (kmh == null && t.distance_km != null && t.end_time) {
-        const hrs = (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 3_600_000;
+        const hrs = tripSeconds(t) / 3600;
         if (hrs > 0) kmh = t.distance_km / hrs;
       }
       // max speed always beats avg for "fastest"

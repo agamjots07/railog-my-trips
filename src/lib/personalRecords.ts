@@ -1,4 +1,5 @@
 import type { Tables } from "@/integrations/supabase/types";
+import { tripSeconds } from "./tripDuration";
 
 type Trip = Tables<"trips">;
 
@@ -9,8 +10,8 @@ export type Record = {
 };
 
 function durationMin(t: Trip): number | null {
-  if (!t.end_time) return null;
-  return (new Date(t.end_time).getTime() - new Date(t.start_time).getTime()) / 60000;
+  if (!t.end_time && t.duration_s == null) return null;
+  return tripSeconds(t) / 60;
 }
 
 function fmtH(m: number) {
