@@ -31,7 +31,9 @@ describe("Rovy import rules", () => {
     expect(parseVbo("[data]\n8 150000 0 4782 0 0 0\n8 150005 99999 4782 5 0 0\n8 150010 2622 NaN 5 0 0\n0 150015 2622 4782 5 0 0")).toEqual([]);
   });
   test("VBO ignores stationary repeats and keeps roughly five-second samples", () => {
-    expect(parseVbo("[data]\n8 150000 2622 4782 0 0 0\n8 150001 2622.6 4782.6 5 0 0\n8 150005 2622 4782 0 0 0\n8 150006 2622.6 4782.6 5 0 0\n8 150007 2623.2 4783.2 5 0 0\n8 150011 2623.2 4783.2 5 0 0")).toEqual([[43.7, -79.7], [43.71, -79.71], [43.72, -79.72]]);
+    const points = parseVbo("[data]\n8 150000 2622 4782 0 0 0\n8 150001 2622.6 4782.6 5 0 0\n8 150005 2622 4782 0 0 0\n8 150006 2622.6 4782.6 5 0 0\n8 150007 2623.2 4783.2 5 0 0\n8 150011 2623.2 4783.2 5 0 0");
+    expect(points).toHaveLength(3);
+    points.forEach((point, index) => { expect(point[0]).toBeCloseTo(43.7 + index * .01, 6); expect(point[1]).toBeCloseTo(-79.7 - index * .01, 6); });
   });
   test("VBO five-second thinning crosses midnight", () => {
     expect(parseVbo("[data]\n8 235958 2622 4782 5 0 0\n8 000001 2622.6 4782.6 5 0 0\n8 000003 2623.2 4783.2 5 0 0")).toHaveLength(2);
