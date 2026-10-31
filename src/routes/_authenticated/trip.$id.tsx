@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { TripMap } from "@/components/TripMap";
 import { fmtDate, fmtDuration, fmtClock } from "@/lib/geo";
+import { tripSeconds } from "@/lib/tripDuration";
 import { ChevronLeft, Trash2, StopCircle, Car as CarIcon, Share2, Gauge, Sun, Pause, Play, Loader2, Route as RouteIcon, AlertTriangle, Pencil, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useLiveTracking } from "@/lib/useLiveTracking";
@@ -186,11 +187,11 @@ function TripDetail() {
     setSavingTime(true);
     const { error } = await supabase
       .from("trips")
-      .update({ start_time: start, end_time: end })
+      .update({ start_time: start, end_time: end, duration_s: null })
       .eq("id", trip.id);
     setSavingTime(false);
     if (error) return toast.error(error.message);
-    setTrip({ ...trip, start_time: start, end_time: end });
+    setTrip({ ...trip, start_time: start, end_time: end, duration_s: null });
     setEditingTime(false);
     toast.success("Date & time updated");
   };
@@ -385,7 +386,7 @@ function TripDetail() {
         <Stat label="Date" value={fmtDate(trip.start_time)} />
         <Stat
           label="Duration"
-          value={isLive ? fmtDuration(trip.start_time, new Date(Date.now() - pausedMs).toISOString()) : fmtDuration(trip.start_time, trip.end_time)}
+          value={isLive ? fmtDuration(trip.start_time, new Date(Date.now() - pausedMs).toISOString()) : fmtDuration(trip.start_time, trip.end_time, trip.duration_s)}
           bordered
         />
         <Stat label="Distance" value={distanceKm ? `${distanceKm.toFixed(distanceKm < 10 ? 2 : 0)} km` : "—"} />
@@ -478,7 +479,7 @@ function TripDetail() {
         const savedMax = trip.max_speed_kmh ?? null;
         let avg = savedAvg;
         if (avg == null && trip.distance_km != null && trip.end_time) {
-          const hrs = (new Date(trip.end_time).getTime() - new Date(trip.start_time).getTime()) / 3_600_000;
+          const hrs = tripSeconds(trip) / 3600;
           if (hrs > 0) avg = trip.distance_km / hrs;
         }
         if (avg == null && savedMax == null) return null;
