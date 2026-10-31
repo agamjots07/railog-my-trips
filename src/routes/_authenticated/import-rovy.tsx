@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 const importOptions = queryOptions({ queryKey: ["rovy-import"], queryFn: () => rovyImportData(), staleTime: 0 });
 export const Route = createFileRoute("/_authenticated/import-rovy")({
+  ssr: false,
   head: () => ({ meta: [{ title: "Import from Rovy — Pencer" }, { name: "description", content: "Choose Rovy drives to add to your Pencer Driver history with GPS routes and Garage vehicles." }, { property: "og:title", content: "Import from Rovy — Pencer" }, { property: "og:description", content: "Select and import Rovy drives into your personal journey history." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   loader: ({ context }) => context.queryClient.ensureQueryData(importOptions),
   component: RovyImportPage,
