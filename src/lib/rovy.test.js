@@ -4,7 +4,7 @@ import { parseDrivesCsv, parseVbo, vboKey, rovyTrip, topSpeed, utcTimestamp, veh
 import { tripSeconds } from "./tripDuration";
 import { roadBreakdown } from "./roadStats";
 
-const drive = { id: "abcdefgh-drive", start_time_utc: "2026-10-30 19:00:00", end_time_utc: "2026-10-30 19:30:00", distance_km: 15, duration_s: 1200, avg_speed_kmh: 45, top_speed_kmh: 201, start_location: "Brampton", vehicle: "Kia Soul" };
+const drive = { id: "abcdefgh-drive", start_date_utc: "2026-10-30T19:00:00.000Z", distance_km: 15, duration_s: 1200, avg_speed_kmh: 45, top_speed_kmh: 201, start_location: "Brampton", vehicle: "Kia Soul" };
 const header = Object.keys(drive).join(",");
 describe("Rovy import rules", () => {
   test("CSV preserves all drive fields and quoted origin names", () => {
@@ -17,8 +17,26 @@ describe("Rovy import rules", () => {
   });
   test("invalid UTC dates cannot become trips", () => { expect(() => utcTimestamp("bad-date")).toThrow(); });
   test("UTC timestamps retain their instant for local display", () => {
-    expect(utcTimestamp(drive.start_time_utc)).toBe("2026-10-30T19:00:00.000Z");
-    expect(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(utcTimestamp(drive.start_time_utc)))).toBe("15:00");
+    expect(utcTimestamp(drive.start_date_utc)).toBe("2026-10-30T19:00:00.000Z");
+    expect(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(utcTimestamp(drive.start_date_utc)))).toBe("15:00");
+  });
+  test("full start_date_utc replaces time-only fields and duration determines end", () => {
+    const csv = `${header},start_time_utc,end_time_utc,unused\n${Object.values({ ...drive, start_date_utc: "2026-04-15T18:57:02.607Z" }).join(",")},18:57:02,19:30:00,`;
+    const [parsed] = parseDrivesCsv(csv);
+    const trip = rovyTrip(parsed, [], null);
+    expect(trip.start_time).toBe("2026-04-15T18:57:02.607Z");
+    expect(trip.end_time).toBe("2026-04-15T19:17:02.607Z");
+    const local = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Toronto", hour: "2-digit", minute: "2-digit", hour12: false });
+    expect(local.format(new Date(trip.start_time))).toBe("14:57");
+    expect(local.format(new Date(trip.end_time))).toBe("15:17");
+  });
+  test("empty optional metrics and unused columns do not block parsing", () => {
+    const [parsed] = parseDrivesCsv("id,start_date_utc,distance_km,duration_s,avg_speed_kmh,top_speed_kmh,unused\nabcdefgh-drive,2026-04-15T18:57:02.607Z,15,1200, ,,");
+    expect(parsed).toMatchObject({ avg_speed_kmh: null, top_speed_kmh: null, start_location: "", vehicle: "" });
+    expect(parseDrivesCsv("id,start_date_utc,distance_km,duration_s\nabcdefgh-drive,2026-04-15T18:57:02.607Z,15,1200")).toHaveLength(1);
+  });
+  test("end time rolls into the next date when duration crosses midnight", () => {
+    expect(rovyTrip({ ...drive, start_date_utc: "2026-04-15T23:57:02.607Z" }, [], null).end_time).toBe("2026-04-16T00:17:02.607Z");
   });
   test("VBO matches filename stem suffix to eight-character drive prefix", () => {
     expect(vboKey("folder/2026-10-30_abcdefgh.vbo")).toBe(drive.id.slice(0, 8));

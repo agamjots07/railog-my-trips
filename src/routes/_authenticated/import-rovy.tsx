@@ -129,7 +129,7 @@ function RovyImportPage() {
             return <label key={d.id} className={`flex items-start gap-3 py-4 ${done ? "opacity-40" : "cursor-pointer"}`}>
               <Checkbox aria-label={`Select drive ${d.id}`} checked={!done && selected.has(d.id)} disabled={done || busy} onCheckedChange={() => toggle(d.id)} className="mt-1 shrink-0" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2"><time className="text-sm font-semibold">{new Date(utcTimestamp(d.start_time_utc)).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</time><span className="shrink-0 text-xs tabular-nums">{d.distance_km.toFixed(1)} km</span></div>
+                <div className="flex items-center justify-between gap-2"><time className="text-sm font-semibold">{new Date(utcTimestamp(d.start_date_utc)).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}</time><span className="shrink-0 text-xs tabular-nums">{d.distance_km.toFixed(1)} km</span></div>
                 <p className="mt-1 break-words text-sm">{d.start_location || "Unknown start"}</p>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"><span className="flex items-center gap-1"><Car className="h-3 w-3" />{d.vehicle || "No vehicle"}</span><span className="flex items-center gap-1">{done ? <Check className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}{done ? "Already imported" : available ? "VBO available" : "No route file"}</span></div>
               </div>

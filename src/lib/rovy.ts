@@ -3,12 +3,11 @@ import { z } from "zod";
 
 export const rovyDriveSchema = z.object({
   id: z.string().trim().min(8).max(200),
-  start_time_utc: z.string().min(1).max(100),
-  end_time_utc: z.string().min(1).max(100),
+  start_date_utc: z.string().trim().min(1).max(100),
   distance_km: z.coerce.number().finite().nonnegative(),
   duration_s: z.coerce.number().finite().nonnegative(),
-  avg_speed_kmh: z.preprocess(v => v === "" || v == null ? null : Number(v), z.number().finite().nonnegative().nullable()),
-  top_speed_kmh: z.preprocess(v => v === "" || v == null ? null : Number(v), z.number().finite().nonnegative().nullable()),
+  avg_speed_kmh: z.preprocess(v => v == null || (typeof v === "string" && !v.trim()) ? null : Number(v), z.number().finite().nonnegative().nullable()),
+  top_speed_kmh: z.preprocess(v => v == null || (typeof v === "string" && !v.trim()) ? null : Number(v), z.number().finite().nonnegative().nullable()),
   start_location: z.string().trim().max(1000).default(""),
   vehicle: z.string().trim().max(200).default(""),
 });
@@ -23,20 +22,22 @@ export function utcTimestamp(value: string): string {
 }
 export function validateDrive(value: unknown): RovyDrive {
   const drive = rovyDriveSchema.parse(value);
-  if (Date.parse(utcTimestamp(drive.end_time_utc)) < Date.parse(utcTimestamp(drive.start_time_utc))) throw new Error("A drive ends before it starts.");
+  const start = Date.parse(utcTimestamp(drive.start_date_utc));
+  if (!Number.isFinite(new Date(start + drive.duration_s * 1000).getTime())) throw new Error("Invalid drive duration.");
   return drive;
 }
 export function parseDrivesCsv(text: string): RovyDrive[] {
   const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: "greedy", transformHeader: h => h.replace(/^\uFEFF/, "").trim().toLowerCase() });
-  if (parsed.errors.length) throw new Error(`Could not read drives.csv: ${parsed.errors[0]?.message}`);
-  const required = ["id", "start_time_utc", "end_time_utc", "distance_km", "duration_s", "avg_speed_kmh", "top_speed_kmh", "start_location", "vehicle"];
+  const error = parsed.errors.find(error => error.type !== "FieldMismatch");
+  if (error) throw new Error(`Could not read drives.csv: ${error.message}`);
+  const required = ["id", "start_date_utc", "distance_km", "duration_s"];
   if (required.some(h => !parsed.meta.fields?.includes(h))) throw new Error(`drives.csv needs these columns: ${required.join(", ")}.`);
   const unique = new Map<string, RovyDrive>();
   parsed.data.forEach((row, index) => {
     try { const drive = validateDrive(row); unique.set(drive.id, drive); }
     catch { throw new Error(`Invalid drive on CSV row ${index + 2}. Check dates and numeric values.`); }
   });
-  return [...unique.values()].sort((a, b) => utcTimestamp(b.start_time_utc).localeCompare(utcTimestamp(a.start_time_utc)));
+  return [...unique.values()].sort((a, b) => utcTimestamp(b.start_date_utc).localeCompare(utcTimestamp(a.start_date_utc)));
 }
 export function vboKey(filename: string): string | null {
   const basename = filename.split(/[\\/]/).pop() ?? "";
@@ -45,7 +46,7 @@ export function vboKey(filename: string): string | null {
 }
 export const vehicleKey = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
 export function localMonth(drive: RovyDrive): string {
-  const date = new Date(utcTimestamp(drive.start_time_utc));
+  const date = new Date(utcTimestamp(drive.start_date_utc));
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 export function topSpeed(value: number | null): number | null { return value != null && value <= 200 ? value : null; }
@@ -83,9 +84,10 @@ export function parseVbo(text: string): Point[] {
 
 export function rovyTrip(drive: RovyDrive, route: Point[], vehicleId: string | null) {
   const first = route[0], last = route.at(-1);
+  const start = utcTimestamp(drive.start_date_utc);
   return {
     mode: "driver" as const, rovy_drive_id: drive.id,
-    start_time: utcTimestamp(drive.start_time_utc), end_time: utcTimestamp(drive.end_time_utc),
+    start_time: start, end_time: new Date(Date.parse(start) + drive.duration_s * 1000).toISOString(),
     duration_s: drive.duration_s, distance_km: drive.distance_km,
     avg_speed_kmh: drive.avg_speed_kmh, max_speed_kmh: topSpeed(drive.top_speed_kmh),
     origin: drive.start_location || "Unknown start", destination: "Unknown destination",
