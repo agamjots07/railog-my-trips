@@ -228,10 +228,10 @@ export function GoogleMapCanvas({
           strokeWeight: 2,
         },
       });
-      if (s.onDrag) marker.addListener("drag", (e: any) => s.onDrag!([e.latLng.lat(), e.latLng.lng()]));
+      if (s.onDrag) marker.addListener("drag", (e: any) => s.onDrag?.([e.latLng.lat(), e.latLng.lng()]));
       if (s.onDragEnd)
-        marker.addListener("dragend", (e: any) => s.onDragEnd!([e.latLng.lat(), e.latLng.lng()]));
-      if (s.onClick) marker.addListener("click", () => s.onClick!());
+        marker.addListener("dragend", (e: any) => s.onDragEnd?.([e.latLng.lat(), e.latLng.lng()]));
+      if (s.onClick) marker.addListener("click", () => s.onClick?.());
       overlaysRef.current.push(marker);
       bounds.extend({ lat: s.pos[0], lng: s.pos[1] });
     }
