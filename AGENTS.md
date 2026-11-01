@@ -4,3 +4,4 @@
 - Persist imported durations separately and prefer them over elapsed timestamps in saved-trip displays and statistics to preserve recorded moving time.
 - Process persisted pending Rovy destination names sequentially in a root-mounted signed-in queue so imports remain fast and interrupted lookups can resume.
 - Keep the Rovy import page client-rendered because its protected initial loader requires the browser-held session on hard refresh.
+- Keep waypoint mutations and undo history in a browser-safe reducer shared by the editor and tests so bulk deletion preserves point order and can be reversed.

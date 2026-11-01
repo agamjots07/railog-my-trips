@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import { MapContainer, TileLayer, Polyline, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,9 @@ import { GoogleMapCanvas, useMapProvider } from "@/components/GoogleMapCanvas";
 import { MapStyleToggle, type MapStyle } from "@/components/MapStyleToggle";
 import { MODE_COLOR, type TripMode } from "@/lib/modes";
 import { haversineKm } from "@/lib/geo";
-import { X, Undo2, Trash2, Check, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { waypointEditorReducer, waypointRange } from "@/lib/waypointEditor";
+import { X, Undo2, Trash2, Check, Loader2, ListChecks, BetweenHorizontalStart } from "lucide-react";
 import { toast } from "sonner";
 
 type LatLng = [number, number];
@@ -59,7 +61,33 @@ export function RouteBuilder({
   onClose: () => void;
   onSaved: (v: { path: LatLng[]; distanceKm: number; maxSpeed: number | null }) => void;
 }) {
-  const [points, setPoints] = useState<LatLng[]>(initialPath);
+  const [editor, dispatch] = useReducer(waypointEditorReducer, {
+    points: initialPath, history: [], movingIndex: null,
+  });
+  const { points } = editor;
+  const setPoints = (update: LatLng[] | ((prev: LatLng[]) => LatLng[])) =>
+    dispatch({ type: "replace", points: typeof update === "function" ? update(points) : update });
+  const [selectMode, setSelectMode] = useState(false);
+  const [selection, setSelection] = useState<number[]>([]);
+  const [rangeMode, setRangeMode] = useState(false);
+  const [rangeStart, setRangeStart] = useState<number | null>(null);
+  const [selectionColor, setSelectionColor] = useState(MODE_COLOR.ferry);
+  useEffect(() => {
+    setSelectionColor(getComputedStyle(document.documentElement).getPropertyValue("--destructive").trim());
+  }, []);
+  const resetSelection = () => { setSelection([]); setRangeStart(null); setSelected(null); };
+  const tapPoint = (i: number) => {
+    if (!selectMode) { setSelected((s) => s === i ? null : i); return; }
+    if (rangeMode) {
+      if (rangeStart == null) { setRangeStart(i); setSelection((s) => [...new Set([...s, i])]); }
+      else {
+        setSelection((s) => [...new Set([...s, ...waypointRange(rangeStart, i)])]);
+        setRangeStart(null);
+      }
+    } else setSelection((s) => s.includes(i) ? s.filter((j) => j !== i) : [...s, i]);
+  };
+  const undo = () => { dispatch({ type: "undo" }); resetSelection(); };
+  const deleteSelected = () => { dispatch({ type: "delete", indices: selection }); resetSelection(); };
   const [selected, setSelected] = useState<number | null>(null);
   const [topSpeed, setTopSpeed] = useState<string>(
     initialTopSpeed != null ? String(Math.round(initialTopSpeed)) : "",
@@ -77,7 +105,7 @@ export function RouteBuilder({
     setSelected(null);
   };
   const movePoint = (i: number, p: LatLng) =>
-    setPoints((prev) => prev.map((q, j) => (j === i ? p : q)));
+    dispatch({ type: "move", index: i, point: p });
   const insertAt = (i: number, p: LatLng) => {
     setPoints((prev) => [...prev.slice(0, i), p, ...prev.slice(i)]);
     setSelected(i);
@@ -91,13 +119,14 @@ export function RouteBuilder({
   const stops = useMemo(() => {
     const out = points.map((p, i) => ({
       pos: p,
-      color,
-      scale: selected === i ? 9 : 7,
-      draggable: true,
+      color: selection.includes(i) ? selectionColor : color,
+      scale: selection.includes(i) ? 11 : selected === i ? 9 : 7,
+      draggable: !selectMode,
       zIndex: 20,
       title: `Waypoint ${i + 1}`,
-      onDragEnd: (np: LatLng) => movePoint(i, np),
-      onClick: () => setSelected((s) => (s === i ? null : i)),
+      onDrag: (np: LatLng) => movePoint(i, np),
+      onDragEnd: (np: LatLng) => { movePoint(i, np); dispatch({ type: "finishMove" }); },
+      onClick: () => tapPoint(i),
     }));
     const mids = points.slice(1).map((p, i) => ({
       pos: midpoint(points[i], p),
@@ -110,8 +139,8 @@ export function RouteBuilder({
       onDragEnd: (np: LatLng) => insertAt(i + 1, np),
       onClick: () => insertAt(i + 1, midpoint(points[i], p)),
     }));
-    return [...mids, ...out];
-  }, [points, color, selected]);
+    return selectMode ? out : [...mids, ...out];
+  }, [points, color, selected, selectMode, selection, selectionColor, rangeMode, rangeStart]);
 
 
   const save = async () => {
@@ -140,37 +169,37 @@ export function RouteBuilder({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex flex-col bg-background">
+    <div role="dialog" aria-modal="true" aria-label="Trace route" className="fixed inset-0 z-[2000] flex h-[100dvh] flex-col overflow-hidden bg-background">
       <div
-        className="flex shrink-0 items-center justify-between border-b border-white/[0.06] px-4 pb-3"
+        className="flex shrink-0 items-center justify-between border-b border-border px-4 pb-3"
         style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
-        <button
+        <Button
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-white/[0.06] bg-card/60 text-muted-foreground"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card/60 text-muted-foreground"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
           Trace route
         </p>
-        <button
+        <Button
           onClick={save}
           disabled={saving || points.length < 2}
           className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-primary px-3 text-xs font-bold text-primary-foreground transition active:scale-[0.98] disabled:opacity-60"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           Done
-        </button>
+        </Button>
       </div>
 
-      <div className="relative min-h-[35vh] flex-1">
+      <div className="relative min-h-0 flex-1">
         {provider === "google" ? (
           <GoogleMapCanvas
             style={style}
             onFail={forceLeaflet}
-            onMapClick={add}
+            onMapClick={selectMode ? undefined : add}
             fit={false}
             center={start}
             zoom={points.length > 1 ? 8 : 9}
@@ -200,11 +229,11 @@ export function RouteBuilder({
                 maxZoom={19}
               />
             )}
-            <LeafletClicks onAdd={add} />
+            {!selectMode && <LeafletClicks onAdd={add} />}
             {points.length > 1 && (
               <Polyline positions={points} pathOptions={{ color, weight: 4, opacity: 0.95 }} />
             )}
-            {points.slice(1).map((p, i) => (
+            {!selectMode && points.slice(1).map((p, i) => (
               <Marker
                 key={`mid-${i}`}
                 position={midpoint(points[i], p)}
@@ -223,14 +252,16 @@ export function RouteBuilder({
               <Marker
                 key={`wp-${i}`}
                 position={p}
-                draggable
-                icon={dotIcon(color, selected === i ? 18 : 14, false)}
+                title={`Waypoint ${i + 1}`}
+                draggable={!selectMode}
+                icon={dotIcon(selection.includes(i) ? selectionColor : color, selection.includes(i) ? 22 : selected === i ? 18 : 14, false)}
                 eventHandlers={{
-                  click: () => setSelected((s) => (s === i ? null : i)),
+                  click: () => tapPoint(i),
                   drag: (e: any) => {
                     const ll = e.target.getLatLng();
                     movePoint(i, [ll.lat, ll.lng]);
                   },
+                  dragend: () => dispatch({ type: "finishMove" }),
                 }}
               />
             ))}
@@ -239,19 +270,35 @@ export function RouteBuilder({
         <div className="absolute right-3 top-3 z-[400]">
           <MapStyleToggle value={style} onChange={setStyle} />
         </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center px-4">
-          <span className="rounded-full bg-background/80 px-3 py-1.5 text-center text-[11px] font-semibold text-muted-foreground backdrop-blur">
-            Tap the map to add · drag dots to move · drag/tap a faded dot to insert
-          </span>
-        </div>
 
       </div>
 
       <div
-        className="max-h-[55vh] shrink-0 space-y-3 overflow-y-auto border-t border-white/[0.06] bg-card px-4 pt-4"
-        style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+        className="shrink-0 border-t border-border bg-card px-4 pt-3"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
       >
-        {selected != null && points[selected] && (
+        <div className="flex flex-wrap items-center gap-2 pb-3">
+          <Button variant={selectMode ? "default" : "outline"} className="h-11" aria-pressed={selectMode}
+            onClick={() => { setSelectMode(!selectMode); setRangeMode(false); resetSelection(); }}>
+            <ListChecks /> {selectMode ? "Finish selecting" : "Select"}
+          </Button>
+          {selectMode && <Button variant={rangeMode ? "secondary" : "outline"} className="h-11" aria-pressed={rangeMode}
+            onClick={() => { setRangeMode(!rangeMode); setRangeStart(null); }}>
+            <BetweenHorizontalStart /> Stretch
+          </Button>}
+          {selectMode && <Button variant="ghost" className="h-11" disabled={!selection.length} onClick={resetSelection}>Clear selection</Button>}
+          <Button variant="outline" className="ml-auto h-11" onClick={undo} disabled={!editor.history.length} title="Undo last edit">
+            <Undo2 /> Undo
+          </Button>
+          {selectMode && <Button variant="destructive" className="h-11 w-full" disabled={!selection.length} onClick={deleteSelected}>
+            <Trash2 /> Delete {selection.length} {selection.length === 1 ? "point" : "points"}
+          </Button>}
+          {selectMode && rangeMode && <p role="status" className="w-full text-xs text-muted-foreground">
+            {rangeStart == null ? "First point" : `Waypoint ${rangeStart + 1} → Last point`}
+          </p>}
+        </div>
+        <div className="max-h-[24dvh] space-y-3 overflow-y-auto pb-1">
+        {!selectMode && selected != null && points[selected] && (
           <div className="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 px-3 py-2">
             <span className="flex-1 text-xs font-semibold">
               Waypoint {selected + 1}
@@ -259,18 +306,18 @@ export function RouteBuilder({
                 {points[selected][0].toFixed(4)}, {points[selected][1].toFixed(4)}
               </span>
             </span>
-            <button
+            <Button
               onClick={() => insertAt(selected + 1, points[selected])}
-              className="rounded-full border border-white/[0.1] px-3 py-1.5 text-[11px] font-bold"
+              className="rounded-full border border-border px-3 py-1.5 text-[11px] font-bold"
             >
               Duplicate
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => removeAt(selected)}
               className="flex items-center gap-1 rounded-full bg-destructive px-3 py-1.5 text-[11px] font-bold text-destructive-foreground"
             >
               <Trash2 className="h-3.5 w-3.5" /> Delete
-            </button>
+            </Button>
           </div>
         )}
 
@@ -287,22 +334,14 @@ export function RouteBuilder({
             </p>
             <p className="mt-1 font-mono text-lg font-bold tabular-nums">{km.toFixed(1)} km</p>
           </div>
-          <button
-            onClick={() => setPoints((p) => p.slice(0, -1))}
+          <Button
+            onClick={() => { setPoints([]); resetSelection(); }}
             disabled={points.length === 0}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-background text-muted-foreground disabled:opacity-40"
-            aria-label="Undo"
-          >
-            <Undo2 className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setPoints([])}
-            disabled={points.length === 0}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/[0.08] bg-background text-muted-foreground disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground disabled:opacity-40"
             aria-label="Clear"
           >
             <Trash2 className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         <label className="block">
@@ -314,9 +353,10 @@ export function RouteBuilder({
             onChange={(e) => setTopSpeed(e.target.value.replace(/[^0-9.]/g, ""))}
             inputMode="decimal"
             placeholder="e.g. 110"
-            className="mt-1.5 w-full rounded-2xl border border-white/[0.08] bg-background px-4 py-3 font-mono text-sm outline-none focus:border-primary/60"
+            className="mt-1.5 w-full rounded-2xl border border-border bg-background px-4 py-3 font-mono text-sm outline-none focus:border-primary/60"
           />
         </label>
+        </div>
       </div>
     </div>
   );
