@@ -5,6 +5,6 @@
 - [x] Test import rules and signed-in selective import flow.
 
 # Waypoint selection
-- [ ] Add multi-point and inclusive stretch selection with highlighted markers.
-- [ ] Add counted deletion and reversible edits with mobile-safe controls.
-- [ ] Test deletion/undo rules and verify the signed-in editor.
+- [x] Add multi-point and inclusive stretch selection with highlighted markers.
+- [x] Add counted deletion and reversible edits with mobile-safe controls.
+- [x] Test deletion/undo rules and verify the signed-in editor.
